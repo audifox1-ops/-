@@ -62,6 +62,63 @@ const initialFormState: FormState = {
   thermalExpansionCoefficient: 0.000012,
 };
 
+/**
+ * DimensionInputGroup Component (Defined outside to prevent Focus Loss)
+ */
+interface DimensionInputGroupProps {
+  label: string;
+  category: 'size' | 'margin' | 'appliedMargin' | 'hotDimension' | 'coldDimension';
+  data: DimensionSet;
+  highlight?: boolean;
+  onChange: (category: 'size' | 'margin' | 'appliedMargin' | 'hotDimension' | 'coldDimension', field: keyof DimensionSet, value: string) => void;
+}
+
+const DimensionInputGroup = React.memo(({ 
+  label, 
+  category, 
+  data, 
+  highlight = false,
+  onChange
+}: DimensionInputGroupProps) => (
+  <div className={`space-y-2 p-3 rounded-lg transition-all ${highlight ? 'bg-slate-900 text-white shadow-inner' : 'bg-slate-50'}`}>
+    <label className={`text-sm font-bold flex items-center gap-2 ${highlight ? 'text-blue-400' : 'text-slate-700'}`}>
+      {highlight ? <Calculator className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+      {label}
+    </label>
+    <div className="flex items-center gap-2">
+      <input 
+        type="number" 
+        step="any"
+        value={data.od || ''} 
+        onChange={(e) => onChange(category, 'od', e.target.value)} 
+        placeholder="OD" 
+        className={`w-full px-2 py-1.5 rounded text-center text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} 
+      />
+      <span className="text-slate-400 text-xs font-bold">x</span>
+      <input 
+        type="number" 
+        step="any"
+        value={data.id || ''} 
+        onChange={(e) => onChange(category, 'id', e.target.value)} 
+        placeholder="ID" 
+        className={`w-full px-2 py-1.5 rounded text-center text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} 
+      />
+      <span className="text-slate-400 text-xs font-bold">x</span>
+      <input 
+        type="number" 
+        step="any"
+        value={data.t || ''} 
+        onChange={(e) => onChange(category, 't', e.target.value)} 
+        placeholder="T" 
+        className={`w-full px-2 py-1.5 rounded text-center text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} 
+      />
+      <span className={`text-[10px] font-bold ml-1 ${highlight ? 'text-slate-500' : 'text-slate-400'}`}>mm</span>
+    </div>
+  </div>
+));
+
+DimensionInputGroup.displayName = 'DimensionInputGroup';
+
 export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [isSaved, setIsSaved] = useState(false);
@@ -70,7 +127,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
   // Search state
   const [searchMfgNo, setSearchMfgNo] = useState('');
   const [searchSN, setSearchSN] = useState('');
-  const [searchMessage, setSearchMessage] = useState('');
+  const [searchResults, setSearchResults] = useState<RingMillData[] | null>(null);
 
   // Auto-calculation logic
   useEffect(() => {
@@ -94,23 +151,36 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     const hID = cID * (1 + coeff);
     const hT = cT * (1 + coeff);
 
-    setFormData(prev => ({
-      ...prev,
-      coldDimension: {
+    // Only update if values actually changed to prevent unnecessary re-renders
+    setFormData(prev => {
+      const newCold = {
         od: cOD > 0 ? cOD.toFixed(2) : prev.coldDimension.od,
         id: cID > 0 ? cID.toFixed(2) : prev.coldDimension.id,
         t: cT > 0 ? cT.toFixed(2) : prev.coldDimension.t,
-      },
-      hotDimension: {
+      };
+      const newHot = {
         od: hOD > 0 ? hOD.toFixed(2) : prev.hotDimension.od,
         id: hID > 0 ? hID.toFixed(2) : prev.hotDimension.id,
         t: hT > 0 ? hT.toFixed(2) : prev.hotDimension.t,
+      };
+
+      if (
+        JSON.stringify(newCold) === JSON.stringify(prev.coldDimension) &&
+        JSON.stringify(newHot) === JSON.stringify(prev.hotDimension)
+      ) {
+        return prev;
       }
-    }));
+
+      return {
+        ...prev,
+        coldDimension: newCold,
+        hotDimension: newHot
+      };
+    });
   }, [formData.size, formData.margin, formData.thermalExpansionCoefficient]);
 
   // Manufacturing No Masking: 000000-00000-000
-  const handleMfgNoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMfgNoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^0-9]/g, '');
     if (value.length > 14) value = value.slice(0, 14);
     
@@ -124,30 +194,41 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     }
     
     setFormData(prev => ({ ...prev, manufacturingNo: masked }));
-  };
+  }, []);
 
   // S/N Padding: 001-999
-  const handleSNBlur = () => {
-    if (formData.sn) {
-      const num = parseInt(formData.sn, 10);
-      if (!isNaN(num)) {
-        const padded = num.toString().padStart(3, '0');
-        setFormData(prev => ({ ...prev, sn: padded }));
+  const handleSNBlur = useCallback(() => {
+    setFormData(prev => {
+      if (prev.sn) {
+        const num = parseInt(prev.sn, 10);
+        if (!isNaN(num)) {
+          const padded = num.toString().padStart(3, '0');
+          if (padded !== prev.sn) {
+            return { ...prev, sn: padded };
+          }
+        }
       }
-    }
-  };
+      return prev;
+    });
+  }, []);
 
-  const handleSearch = () => {
-    if (searchMfgNo && searchSN) {
-      const paddedSN = searchSN.padStart(3, '0');
-      setSearchMessage(`제조번호 [${searchMfgNo}], S/N [${paddedSN}]의 단일 기록을 조회합니다.`);
-    } else if (searchMfgNo) {
-      setSearchMessage(`제조번호 [${searchMfgNo}]에 해당하는 전체 S/N 기록을 조회합니다.`);
-    } else {
-      setSearchMessage('검색 조건을 입력해 주세요.');
+  const handleSearch = useCallback(() => {
+    if (!searchMfgNo) {
+      setSearchResults([]);
+      return;
     }
-    setTimeout(() => setSearchMessage(''), 5000);
-  };
+
+    const filtered = allRecords.filter(record => {
+      const mfgMatch = record.manufacturingNo.includes(searchMfgNo);
+      if (searchSN) {
+        const paddedSN = searchSN.padStart(3, '0');
+        return mfgMatch && record.sn === paddedSN;
+      }
+      return mfgMatch;
+    });
+
+    setSearchResults(filtered);
+  }, [searchMfgNo, searchSN, allRecords]);
 
   const validate = () => {
     const newErrors: Partial<Record<string, string>> = {};
@@ -182,7 +263,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     }
   };
 
-  const handleDimensionChange = (
+  const handleDimensionChange = useCallback((
     category: 'size' | 'margin' | 'appliedMargin' | 'hotDimension' | 'coldDimension',
     field: keyof DimensionSet,
     value: string
@@ -194,71 +275,21 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
         [field]: value
       }
     }));
-  };
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0 : value
+      [name]: type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value
     }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-  };
+    setErrors(prev => ({ ...prev, [name]: undefined }));
+  }, []);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData(initialFormState);
     setErrors({});
-  };
-
-  const DimensionInputGroup = ({ 
-    label, 
-    category, 
-    data, 
-    highlight = false 
-  }: { 
-    label: string, 
-    category: 'size' | 'margin' | 'appliedMargin' | 'hotDimension' | 'coldDimension',
-    data: DimensionSet,
-    highlight?: boolean
-  }) => (
-    <div className={`space-y-2 p-3 rounded-lg transition-all ${highlight ? 'bg-slate-900 text-white shadow-inner' : 'bg-slate-50'}`}>
-      <label className={`text-sm font-bold flex items-center gap-2 ${highlight ? 'text-blue-400' : 'text-slate-700'}`}>
-        {highlight ? <Calculator className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input 
-          type="number" 
-          step="0.01"
-          value={data.od} 
-          onChange={(e) => handleDimensionChange(category, 'od', e.target.value)} 
-          placeholder="OD" 
-          className={`w-full px-2 py-1.5 rounded text-center text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} 
-        />
-        <span className="text-slate-400 text-xs font-bold">x</span>
-        <input 
-          type="number" 
-          step="0.01"
-          value={data.id} 
-          onChange={(e) => handleDimensionChange(category, 'id', e.target.value)} 
-          placeholder="ID" 
-          className={`w-full px-2 py-1.5 rounded text-center text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} 
-        />
-        <span className="text-slate-400 text-xs font-bold">x</span>
-        <input 
-          type="number" 
-          step="0.01"
-          value={data.t} 
-          onChange={(e) => handleDimensionChange(category, 't', e.target.value)} 
-          placeholder="T" 
-          className={`w-full px-2 py-1.5 rounded text-center text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`} 
-        />
-        <span className={`text-[10px] font-bold ml-1 ${highlight ? 'text-slate-500' : 'text-slate-400'}`}>mm</span>
-      </div>
-    </div>
-  );
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -298,10 +329,102 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               조회
             </button>
           </div>
+          
           <AnimatePresence>
-            {searchMessage && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded text-blue-700 text-sm flex items-center gap-2">
-                <Info className="w-4 h-4" /> {searchMessage}
+            {searchResults !== null && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: 'auto' }} 
+                exit={{ opacity: 0, height: 0 }} 
+                className="mt-6 border-t border-slate-100 pt-6"
+              >
+                {searchResults.length === 0 ? (
+                  <div className="p-4 bg-slate-50 rounded-lg text-slate-500 text-center text-sm flex items-center justify-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    일치하는 기록이 없습니다.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-blue-500" />
+                        조회 결과 ({searchResults.length}건)
+                      </h4>
+                      <button 
+                        onClick={() => setSearchResults(null)}
+                        className="text-xs text-slate-400 hover:text-slate-600"
+                      >
+                        닫기
+                      </button>
+                    </div>
+
+                    {searchSN && searchResults.length === 1 ? (
+                      // Single Record Full Details
+                      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">제조번호 / S/N</p>
+                          <p className="text-sm font-mono font-bold text-slate-700">{searchResults[0].manufacturingNo} / {searchResults[0].sn}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">규격 (SIZE)</p>
+                          <p className="text-sm font-bold text-slate-700">{searchResults[0].size}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">열처리 / 재질</p>
+                          <p className="text-sm font-bold text-slate-700">{searchResults[0].heatTreatmentType} / {searchResults[0].material}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">작업자 / 일자</p>
+                          <p className="text-sm font-bold text-slate-700">{searchResults[0].worker} ({searchResults[0].workDate})</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">냉간치수</p>
+                          <p className="text-sm font-mono font-bold text-blue-600">{searchResults[0].coldDimension}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">열간치수</p>
+                          <p className="text-sm font-mono font-bold text-orange-600">{searchResults[0].hotDimension}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">여유치</p>
+                          <p className="text-sm font-bold text-slate-600">{searchResults[0].margin}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">실적용여유치</p>
+                          <p className="text-sm font-bold text-slate-600">{searchResults[0].appliedMargin}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      // List of Matching SNs
+                      <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">S/N</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">규격</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">재질</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">냉간치수</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">작업자</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">일자</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {searchResults.map((record) => (
+                              <tr key={record.id} className="hover:bg-blue-50/50 transition-colors">
+                                <td className="px-4 py-2 text-sm font-mono font-bold text-slate-700">{record.sn}</td>
+                                <td className="px-4 py-2 text-xs text-slate-600">{record.size}</td>
+                                <td className="px-4 py-2 text-xs text-slate-600">{record.material}</td>
+                                <td className="px-4 py-2 text-sm font-mono font-bold text-blue-600">{record.coldDimension}</td>
+                                <td className="px-4 py-2 text-xs text-slate-600">{record.worker}</td>
+                                <td className="px-4 py-2 text-xs text-slate-500">{record.workDate}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -349,7 +472,8 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   <input
                     type="number"
                     name="sn"
-                    value={formData.sn}
+                    step="any"
+                    value={formData.sn || ''}
                     onChange={handleChange}
                     onBlur={handleSNBlur}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono text-sm"
@@ -382,9 +506,9 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> 규격 및 여유치
               </h3>
-              <DimensionInputGroup label="SIZE (규격)" category="size" data={formData.size} />
-              <DimensionInputGroup label="여유치 (Margin)" category="margin" data={formData.margin} />
-              <DimensionInputGroup label="실적용 여유치" category="appliedMargin" data={formData.appliedMargin} />
+              <DimensionInputGroup label="SIZE (규격)" category="size" data={formData.size} onChange={handleDimensionChange} />
+              <DimensionInputGroup label="여유치 (Margin)" category="margin" data={formData.margin} onChange={handleDimensionChange} />
+              <DimensionInputGroup label="실적용 여유치" category="appliedMargin" data={formData.appliedMargin} onChange={handleDimensionChange} />
             </div>
           </div>
 
@@ -402,23 +526,23 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                 <input
                   type="number"
                   name="thermalExpansionCoefficient"
-                  step="0.000001"
-                  value={formData.thermalExpansionCoefficient}
+                  step="any"
+                  value={formData.thermalExpansionCoefficient || ''}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono text-sm font-bold"
                 />
               </div>
 
-              <DimensionInputGroup label="냉간치수 (Cold Dimension)" category="coldDimension" data={formData.coldDimension} highlight />
-              <DimensionInputGroup label="열간치수 (Hot Dimension)" category="hotDimension" data={formData.hotDimension} highlight />
+              <DimensionInputGroup label="냉간치수 (Cold Dimension)" category="coldDimension" data={formData.coldDimension} highlight onChange={handleDimensionChange} />
+              <DimensionInputGroup label="열간치수 (Hot Dimension)" category="hotDimension" data={formData.hotDimension} highlight onChange={handleDimensionChange} />
 
               <div className="space-y-1.5 pt-2">
                 <label className="text-xs font-bold text-slate-500 uppercase">결과 치수 (mm)</label>
                 <input
                   type="number"
                   name="resultDimension"
-                  step="0.01"
-                  value={formData.resultDimension}
+                  step="any"
+                  value={formData.resultDimension || ''}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono text-lg font-bold"
                 />
