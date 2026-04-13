@@ -23,6 +23,7 @@ export interface RingMillData {
   material: string; // 재질
   heatTreatmentType: 'QT' | 'N' | 'S/A' | '기타' | string; // 열처리종류
   measurements: MeasurementRecord[]; // 다중 측정 기록부
+  coldDimension: string; // 목표 냉간치수 (OD x ID x T mm)
   hotDimension: string; // 목표 열간치수 (OD x ID x T mm)
   workDate: string; // 작업일자
   worker: string; // 작업자

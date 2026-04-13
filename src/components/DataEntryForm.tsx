@@ -36,10 +36,11 @@ interface DimensionSet {
   t: string;
 }
 
-interface FormState extends Omit<RingMillDataInput, 'size' | 'margin' | 'appliedMargin' | 'hotDimension' | 'measurements'> {
+interface FormState extends Omit<RingMillDataInput, 'size' | 'margin' | 'appliedMargin' | 'coldDimension' | 'hotDimension' | 'measurements'> {
   size: DimensionSet;
   margin: DimensionSet;
   appliedMargin: DimensionSet;
+  coldDimension: DimensionSet;
   hotDimension: DimensionSet;
   measurements: MeasurementRecord[];
 }
@@ -62,6 +63,7 @@ const initialFormState: FormState = {
   size: { ...initialDimension },
   margin: { ...initialDimension },
   appliedMargin: { ...initialDimension },
+  coldDimension: { ...initialDimension },
   hotDimension: { ...initialDimension },
   material: '',
   heatTreatmentType: '',
@@ -122,11 +124,17 @@ const MeasurementRow = React.memo(({
       </td>
       <td className="py-3 px-4">
         <div className="flex items-center justify-center gap-2 text-[11px] font-mono font-bold">
-          <span className={parseFloat(record.remainingOD) > 0 ? 'text-blue-600' : 'text-slate-400'}>{record.remainingOD}</span>
+          <span className={parseFloat(record.remainingOD) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingOD) > 0 ? 'text-blue-600' : 'text-slate-400'}>
+            {record.remainingOD}
+          </span>
           <span className="text-slate-300">/</span>
-          <span className={parseFloat(record.remainingID) > 0 ? 'text-blue-600' : 'text-slate-400'}>{record.remainingID}</span>
+          <span className={parseFloat(record.remainingID) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingID) > 0 ? 'text-blue-600' : 'text-slate-400'}>
+            {record.remainingID}
+          </span>
           <span className="text-slate-300">/</span>
-          <span className={parseFloat(record.remainingT) > 0 ? 'text-blue-600' : 'text-slate-400'}>{record.remainingT}</span>
+          <span className={parseFloat(record.remainingT) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingT) > 0 ? 'text-blue-600' : 'text-slate-400'}>
+            {record.remainingT}
+          </span>
         </div>
       </td>
       <td className="py-3 px-4 text-center">
@@ -226,15 +234,26 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     const mID = parseFloat(formData.margin.id) || 0;
     const mT = parseFloat(formData.margin.t) || 0;
 
+    const amOD = parseFloat(formData.appliedMargin.od) || 0;
+    const amID = parseFloat(formData.appliedMargin.id) || 0;
+    const amT = parseFloat(formData.appliedMargin.t) || 0;
+
     const coeff = formData.thermalExpansionCoefficient || 0;
 
     setFormData(prev => {
-      // 1. Target Hot Dimension Calculation
-      // Target Cold = Size + Margin
-      const targetColdOD = sOD + mOD;
-      const targetColdID = sID + mID;
-      const targetColdT = sT + mT;
+      // 1. Target Cold Dimension Calculation
+      // Target Cold = Size + Applied Margin
+      const targetColdOD = sOD + amOD;
+      const targetColdID = sID + amID;
+      const targetColdT = sT + amT;
 
+      const newColdDimension = {
+        od: targetColdOD > 0 ? targetColdOD.toFixed(2) : prev.coldDimension.od,
+        id: targetColdID > 0 ? targetColdID.toFixed(2) : prev.coldDimension.id,
+        t: targetColdT > 0 ? targetColdT.toFixed(2) : prev.coldDimension.t,
+      };
+
+      // 2. Target Hot Dimension Calculation
       // Target Hot = Target Cold * (1 + Coeff)
       const targetHotOD = targetColdOD * (1 + coeff);
       const targetHotID = targetColdID * (1 + coeff);
@@ -246,7 +265,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
         t: targetHotT > 0 ? targetHotT.toFixed(2) : prev.hotDimension.t,
       };
 
-      // 2. Remaining Margin Calculation for Measurements
+      // 3. Remaining Margin Calculation for Measurements
       const updatedMeasurements = prev.measurements.map(m => {
         const measuredOD = parseFloat(m.measuredOD) || 0;
         const measuredID = parseFloat(m.measuredID) || 0;
@@ -261,18 +280,20 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
       });
 
       // Prevent unnecessary updates
+      const hasColdChanged = JSON.stringify(newColdDimension) !== JSON.stringify(prev.coldDimension);
       const hasHotChanged = JSON.stringify(newHotDimension) !== JSON.stringify(prev.hotDimension);
       const hasMeasurementsChanged = JSON.stringify(updatedMeasurements) !== JSON.stringify(prev.measurements);
 
-      if (!hasHotChanged && !hasMeasurementsChanged) return prev;
+      if (!hasColdChanged && !hasHotChanged && !hasMeasurementsChanged) return prev;
 
       return {
         ...prev,
+        coldDimension: newColdDimension,
         hotDimension: newHotDimension,
         measurements: updatedMeasurements
       };
     });
-  }, [formData.size, formData.margin, formData.thermalExpansionCoefficient, formData.measurements]);
+  }, [formData.size, formData.margin, formData.appliedMargin, formData.thermalExpansionCoefficient, formData.measurements]);
 
   const handleMfgNoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^0-9]/g, '');
@@ -372,6 +393,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
         size: formatDim(formData.size),
         margin: formatDim(formData.margin),
         appliedMargin: formatDim(formData.appliedMargin),
+        coldDimension: formatDim(formData.coldDimension),
         hotDimension: formatDim(formData.hotDimension),
       });
       setIsSaved(true);
@@ -416,28 +438,88 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       </h4>
                       <button onClick={() => setSearchResults(null)} className="text-xs text-slate-400 hover:text-slate-600">닫기</button>
                     </div>
-                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                      <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead className="bg-slate-50">
-                          <tr>
-                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">S/N</th>
-                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">규격</th>
-                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">작업자</th>
-                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">최종 측정</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {searchResults.map((record) => (
-                            <tr key={record.id} className="hover:bg-blue-50/50 transition-colors">
-                              <td className="px-4 py-2 text-sm font-mono font-bold text-slate-700">{record.sn}</td>
-                              <td className="px-4 py-2 text-xs text-slate-600">{record.size}</td>
-                              <td className="px-4 py-2 text-xs text-slate-600">{record.worker}</td>
-                              <td className="px-4 py-2 text-sm font-mono font-bold text-blue-600">{record.measurements[record.measurements.length - 1]?.measuredOD || '-'}</td>
+                    {searchSN && searchResults.length === 1 ? (
+                      // Single Record Full Details
+                      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">제조번호 / S/N</p>
+                          <p className="text-sm font-mono font-bold text-slate-700">{searchResults[0].manufacturingNo} / {searchResults[0].sn}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">규격 (SIZE)</p>
+                          <p className="text-sm font-bold text-slate-700">{searchResults[0].size}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">열처리 / 재질</p>
+                          <p className="text-sm font-bold text-slate-700">{searchResults[0].heatTreatmentType} / {searchResults[0].material}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">작업자 / 일자</p>
+                          <p className="text-sm font-bold text-slate-700">{searchResults[0].worker} ({searchResults[0].workDate})</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">목표 냉간치수</p>
+                          <p className="text-sm font-mono font-bold text-blue-600">{searchResults[0].coldDimension}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">목표 열간치수</p>
+                          <p className="text-sm font-mono font-bold text-orange-600">{searchResults[0].hotDimension}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">여유치</p>
+                          <p className="text-sm font-bold text-slate-600">{searchResults[0].margin}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">실적용여유치</p>
+                          <p className="text-sm font-bold text-slate-600">{searchResults[0].appliedMargin}</p>
+                        </div>
+                        <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">최근 측정 기록 ({searchResults[0].measurements.length}회차)</p>
+                          <div className="flex gap-4">
+                            <div className="bg-white px-3 py-2 rounded border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block">측정 OD</span>
+                              <span className="text-sm font-mono font-bold text-slate-700">{searchResults[0].measurements[searchResults[0].measurements.length - 1]?.measuredOD || '-'}</span>
+                            </div>
+                            <div className="bg-white px-3 py-2 rounded border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block">측정 ID</span>
+                              <span className="text-sm font-mono font-bold text-slate-700">{searchResults[0].measurements[searchResults[0].measurements.length - 1]?.measuredID || '-'}</span>
+                            </div>
+                            <div className="bg-white px-3 py-2 rounded border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block">측정 T</span>
+                              <span className="text-sm font-mono font-bold text-slate-700">{searchResults[0].measurements[searchResults[0].measurements.length - 1]?.measuredT || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      // List of Matching SNs
+                      <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">S/N</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">규격</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">작업자</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">최종 측정 OD</th>
+                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">일자</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {searchResults.map((record) => (
+                              <tr key={record.id} className="hover:bg-blue-50/50 transition-colors">
+                                <td className="px-4 py-2 text-sm font-mono font-bold text-slate-700">{record.sn}</td>
+                                <td className="px-4 py-2 text-xs text-slate-600">{record.size}</td>
+                                <td className="px-4 py-2 text-xs text-slate-600">{record.worker}</td>
+                                <td className="px-4 py-2 text-sm font-mono font-bold text-blue-600">
+                                  {record.measurements[record.measurements.length - 1]?.measuredOD || '-'} mm
+                                </td>
+                                <td className="px-4 py-2 text-xs text-slate-500">{record.workDate}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -519,6 +601,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </label>
                   <input type="number" name="thermalExpansionCoefficient" step="any" value={formData.thermalExpansionCoefficient} onChange={handleChange} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg font-mono text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" />
                 </div>
+                <DimensionInput label="목표 냉간치수 (Target Cold Dimension)" data={formData.coldDimension} onChange={(f, v) => handleCategoryChange('coldDimension', f, v)} highlight />
                 <DimensionInput label="목표 열간치수 (Target Hot Dimension)" data={formData.hotDimension} onChange={(f, v) => handleCategoryChange('hotDimension', f, v)} highlight isHot />
                 <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
                   <div className="flex items-center gap-2 text-blue-700 mb-2">
@@ -526,7 +609,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     <span className="text-xs font-bold">계산 가이드</span>
                   </div>
                   <p className="text-[10px] text-blue-600 leading-relaxed">
-                    목표 열간치수는 [(수주치수 + 여유치) * (1 + 열팽창계수)] 로 자동 계산됩니다. 현장 상황에 따라 직접 수정이 가능합니다.
+                    목표 냉간치수는 [수주치수 + 실작업여유치]로 계산되며, 목표 열간치수는 [목표 냉간치수 * (1 + 열팽창계수)] 로 자동 계산됩니다. 현장 상황에 따라 직접 수정이 가능합니다.
                   </p>
                 </div>
               </div>
