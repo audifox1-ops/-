@@ -21,7 +21,8 @@ import {
   Trash2,
   Table as TableIcon,
   Calculator,
-  Thermometer
+  Thermometer,
+  Download
 } from 'lucide-react';
 import { RingMillData, RingMillDataInput, MeasurementRecord } from '../types/RingMillData';
 
@@ -43,6 +44,8 @@ interface FormState extends Omit<RingMillDataInput, 'size' | 'margin' | 'applied
   coldDimension: DimensionSet;
   hotDimension: DimensionSet;
   measurements: MeasurementRecord[];
+  shift: 'Day' | 'Night';
+  appliedThermalExpansionCoefficient: number;
 }
 
 const initialDimension: DimensionSet = { od: '', id: '', t: '' };
@@ -55,6 +58,8 @@ const createInitialMeasurement = (round: number): MeasurementRecord => ({
   remainingOD: '0.00',
   remainingID: '0.00',
   remainingT: '0.00',
+  averageDimension: '0.00',
+  averageMargin: '0.00',
 });
 
 const initialFormState: FormState = {
@@ -69,8 +74,10 @@ const initialFormState: FormState = {
   heatTreatmentType: '',
   measurements: [createInitialMeasurement(1), createInitialMeasurement(2)],
   workDate: new Date().toISOString().split('T')[0],
+  shift: 'Day',
   worker: '',
   thermalExpansionCoefficient: 0.000012,
+  appliedThermalExpansionCoefficient: 0.000012,
 };
 
 /**
@@ -123,30 +130,39 @@ const MeasurementRow = React.memo(({
         />
       </td>
       <td className="py-3 px-4">
-        <div className="flex items-center justify-center gap-2 text-[11px] font-mono font-bold">
-          <span className={parseFloat(record.remainingOD) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingOD) > 0 ? 'text-blue-600' : 'text-slate-400'}>
-            {record.remainingOD}
-          </span>
-          <span className="text-slate-300">/</span>
-          <span className={parseFloat(record.remainingID) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingID) > 0 ? 'text-blue-600' : 'text-slate-400'}>
-            {record.remainingID}
-          </span>
-          <span className="text-slate-300">/</span>
-          <span className={parseFloat(record.remainingT) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingT) > 0 ? 'text-blue-600' : 'text-slate-400'}>
-            {record.remainingT}
-          </span>
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="flex items-center gap-2 text-[11px] font-mono font-bold">
+            <span className={parseFloat(record.remainingOD) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingOD) > 0 ? 'text-blue-600' : 'text-slate-400'}>
+              {record.remainingOD}
+            </span>
+            <span className="text-slate-300">/</span>
+            <span className={parseFloat(record.remainingID) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingID) > 0 ? 'text-blue-600' : 'text-slate-400'}>
+              {record.remainingID}
+            </span>
+            <span className="text-slate-300">/</span>
+            <span className={parseFloat(record.remainingT) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingT) > 0 ? 'text-blue-600' : 'text-slate-400'}>
+              {record.remainingT}
+            </span>
+          </div>
+          <div className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            평균 여유치: {record.averageMargin}
+          </div>
         </div>
       </td>
       <td className="py-3 px-4 text-center">
-        {canRemove && (
-          <button
-            type="button"
-            onClick={() => onRemove(record.round)}
-            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
+        <div className="text-sm font-mono font-bold text-slate-700">
+          {record.averageDimension}
+        </div>
+      </td>
+      <td className="py-3 px-4 text-center">
+        <button
+          type="button"
+          onClick={() => onRemove(record.round)}
+          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all group-hover:opacity-100"
+          title="기록 삭제"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </td>
     </tr>
   );
@@ -162,13 +178,17 @@ const DimensionInput = React.memo(({
   data, 
   onChange, 
   highlight = false,
-  isHot = false
+  isHot = false,
+  isTarget = false,
+  max
 }: { 
   label: string; 
   data: DimensionSet; 
   onChange: (field: keyof DimensionSet, value: string) => void;
   highlight?: boolean;
   isHot?: boolean;
+  isTarget?: boolean;
+  max?: number;
 }) => (
   <div className={`p-4 rounded-xl border transition-all ${highlight ? 'bg-slate-900 border-slate-800 shadow-inner' : 'bg-slate-50 border-slate-200'}`}>
     <label className={`text-[10px] font-black uppercase tracking-widest mb-3 block ${highlight ? 'text-blue-400' : 'text-slate-500'}`}>
@@ -178,9 +198,14 @@ const DimensionInput = React.memo(({
       <div className="flex-1 space-y-1">
         <input 
           type="number" 
-          step="any"
+          step={isTarget ? "0.01" : "any"}
+          max={max}
           value={data.od} 
-          onChange={(e) => onChange('od', e.target.value)} 
+          onChange={(e) => {
+            const val = e.target.value;
+            if (max && parseFloat(val) > max) return;
+            onChange('od', val);
+          }} 
           className={`w-full px-2 py-2 rounded-lg text-center font-mono text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`}
           placeholder="OD"
         />
@@ -189,9 +214,14 @@ const DimensionInput = React.memo(({
       <div className="flex-1 space-y-1">
         <input 
           type="number" 
-          step="any"
+          step={isTarget ? "0.01" : "any"}
+          max={max}
           value={data.id} 
-          onChange={(e) => onChange('id', e.target.value)} 
+          onChange={(e) => {
+            const val = e.target.value;
+            if (max && parseFloat(val) > max) return;
+            onChange('id', val);
+          }} 
           className={`w-full px-2 py-2 rounded-lg text-center font-mono text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`}
           placeholder="ID"
         />
@@ -200,9 +230,14 @@ const DimensionInput = React.memo(({
       <div className="flex-1 space-y-1">
         <input 
           type="number" 
-          step="any"
+          step={isTarget ? "0.01" : "any"}
+          max={max}
           value={data.t} 
-          onChange={(e) => onChange('t', e.target.value)} 
+          onChange={(e) => {
+            const val = e.target.value;
+            if (max && parseFloat(val) > max) return;
+            onChange('t', val);
+          }} 
           className={`w-full px-2 py-2 rounded-lg text-center font-mono text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`}
           placeholder="T"
         />
@@ -238,7 +273,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     const amID = parseFloat(formData.appliedMargin.id) || 0;
     const amT = parseFloat(formData.appliedMargin.t) || 0;
 
-    const coeff = formData.thermalExpansionCoefficient || 0;
+    const coeff = formData.appliedThermalExpansionCoefficient || 0;
 
     setFormData(prev => {
       // 1. Target Cold Dimension Calculation
@@ -271,11 +306,25 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
         const measuredID = parseFloat(m.measuredID) || 0;
         const measuredT = parseFloat(m.measuredT) || 0;
 
+        const rOD = measuredOD > 0 ? (measuredOD - sOD) : 0;
+        const rID = measuredID > 0 ? (measuredID - sID) : 0;
+        const rT = measuredT > 0 ? (measuredT - sT) : 0;
+
+        const avgDim = measuredOD > 0 && measuredID > 0 && measuredT > 0 
+          ? (measuredOD + measuredID + measuredT) / 3 
+          : 0;
+        
+        const avgMargin = measuredOD > 0 && measuredID > 0 && measuredT > 0
+          ? (rOD + rID + rT) / 3
+          : 0;
+
         return {
           ...m,
-          remainingOD: measuredOD > 0 ? (measuredOD - sOD).toFixed(2) : '0.00',
-          remainingID: measuredID > 0 ? (measuredID - sID).toFixed(2) : '0.00',
-          remainingT: measuredT > 0 ? (measuredT - sT).toFixed(2) : '0.00',
+          remainingOD: rOD !== 0 ? rOD.toFixed(2) : '0.00',
+          remainingID: rID !== 0 ? rID.toFixed(2) : '0.00',
+          remainingT: rT !== 0 ? rT.toFixed(2) : '0.00',
+          averageDimension: avgDim > 0 ? avgDim.toFixed(2) : '0.00',
+          averageMargin: avgMargin !== 0 ? avgMargin.toFixed(2) : '0.00',
         };
       });
 
@@ -290,19 +339,64 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
         ...prev,
         coldDimension: newColdDimension,
         hotDimension: newHotDimension,
-        measurements: updatedMeasurements
+        measurements: updatedMeasurements,
       };
     });
-  }, [formData.size, formData.margin, formData.appliedMargin, formData.thermalExpansionCoefficient, formData.measurements]);
+  }, [formData.size, formData.margin, formData.appliedMargin, formData.appliedThermalExpansionCoefficient, formData.measurements]);
+
+  const applyThermalExpansion = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      appliedThermalExpansionCoefficient: prev.thermalExpansionCoefficient
+    }));
+  }, []);
+
+  const handleExportCSV = useCallback(() => {
+    if (!searchResults || searchResults.length === 0) return;
+
+    let csvContent = "";
+    
+    if (searchResults.length === 1 && searchSN) {
+      // Single record full export
+      const record = searchResults[0];
+      csvContent += `제조번호,${record.manufacturingNo}\n`;
+      csvContent += `S/N,${record.sn}\n`;
+      csvContent += `규격,${record.size}\n`;
+      csvContent += `재질,${record.material}\n`;
+      csvContent += `열처리,${record.heatTreatmentType}\n`;
+      csvContent += `작업자,${record.worker}\n`;
+      csvContent += `작업일자,${record.workDate}\n`;
+      csvContent += `목표 냉간치수,${record.coldDimension}\n`;
+      csvContent += `목표 열간치수,${record.hotDimension}\n\n`;
+      
+      csvContent += "회차,측정 OD,측정 ID,측정 T,남은 OD,남은 ID,남은 T,평균치수,평균여유치\n";
+      record.measurements.forEach(m => {
+        csvContent += `${m.round},${m.measuredOD},${m.measuredID},${m.measuredT},${m.remainingOD},${m.remainingID},${m.remainingT},${m.averageDimension},${m.averageMargin}\n`;
+      });
+    } else {
+      // List export
+      const headers = ["제조번호", "S/N", "규격", "재질", "열처리", "작업자", "작업일자", "최종 측정 OD"];
+      csvContent += headers.join(",") + "\n";
+      searchResults.forEach(record => {
+        const lastOD = record.measurements[record.measurements.length - 1]?.measuredOD || "-";
+        csvContent += `${record.manufacturingNo},${record.sn},"${record.size}",${record.material},${record.heatTreatmentType},${record.worker},${record.workDate},${lastOD}\n`;
+      });
+    }
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `ring_mill_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [searchResults, searchSN]);
 
   const handleMfgNoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/[^0-9]/g, '');
-    if (value.length > 14) value = value.slice(0, 14);
-    let masked = '';
-    if (value.length <= 6) masked = value;
-    else if (value.length <= 11) masked = `${value.slice(0, 6)}-${value.slice(6)}`;
-    else masked = `${value.slice(0, 6)}-${value.slice(6, 11)}-${value.slice(11, 14)}`;
-    setFormData(prev => ({ ...prev, manufacturingNo: masked }));
+    let value = e.target.value;
+    if (value.length > 20) value = value.slice(0, 20);
+    setFormData(prev => ({ ...prev, manufacturingNo: value }));
   }, []);
 
   const handleSNBlur = useCallback(() => {
@@ -375,10 +469,16 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
 
   const validate = () => {
     const newErrors: Partial<Record<string, string>> = {};
-    if (!formData.manufacturingNo || formData.manufacturingNo.length < 16) newErrors.manufacturingNo = '제조번호 확인';
+    if (!formData.manufacturingNo) newErrors.manufacturingNo = '제조번호 확인';
     if (!formData.sn) newErrors.sn = 'S/N 확인';
     if (!formData.worker) newErrors.worker = '작업자 확인';
     if (!formData.size.od || !formData.size.id || !formData.size.t) newErrors.size = '수주치수 확인';
+    
+    const sOD = parseFloat(formData.size.od);
+    const sID = parseFloat(formData.size.id);
+    const sT = parseFloat(formData.size.t);
+    if (sOD > 12000 || sID > 12000 || sT > 12000) newErrors.size = '수주치수 최대 12000mm';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -432,12 +532,18 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
                       <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                         <Info className="w-4 h-4 text-blue-500" /> 조회 결과 ({searchResults.length}건)
                       </h4>
-                      <button onClick={() => setSearchResults(null)} className="text-xs text-slate-400 hover:text-slate-600">닫기</button>
+                      <button 
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-md text-xs font-bold hover:bg-green-100 transition-all"
+                      >
+                        <Download className="w-3 h-3" /> CSV 내보내기
+                      </button>
                     </div>
+                    <button onClick={() => setSearchResults(null)} className="text-xs text-slate-400 hover:text-slate-600">닫기</button>
                     {searchSN && searchResults.length === 1 ? (
                       // Single Record Full Details
                       <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -584,7 +690,9 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                 <Maximize className="w-4 h-4" /> 수주치수 및 여유치
               </h3>
               <div className="space-y-4">
-                <DimensionInput label="수주치수 (Target SIZE)" data={formData.size} onChange={(f, v) => handleCategoryChange('size', f, v)} />
+                <div className="space-y-2">
+                  <DimensionInput label="수주치수 (Target SIZE)" data={formData.size} onChange={(f, v) => handleCategoryChange('size', f, v)} isTarget max={12000} />
+                </div>
                 <DimensionInput label="여유치 (Margin)" data={formData.margin} onChange={(f, v) => handleCategoryChange('margin', f, v)} />
                 <DimensionInput label="실작업 여유치 (Applied Margin)" data={formData.appliedMargin} onChange={(f, v) => handleCategoryChange('appliedMargin', f, v)} />
               </div>
@@ -595,22 +703,55 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                 <Calculator className="w-4 h-4" /> 자동 계산 목표치
               </h3>
               <div className="space-y-4">
-                <div className="p-4 bg-slate-100 rounded-xl border border-slate-200 space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Calculator className="w-3.5 h-3.5" /> 열팽창계수
-                  </label>
-                  <input type="number" name="thermalExpansionCoefficient" step="any" value={formData.thermalExpansionCoefficient} onChange={handleChange} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg font-mono text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" />
+                <div className="p-4 bg-slate-100 rounded-xl border border-slate-200 grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                      <Calculator className="w-3.5 h-3.5" /> 설정된 열팽창계수
+                    </label>
+                    <div className="flex gap-2">
+                      <input type="number" name="thermalExpansionCoefficient" step="any" value={formData.thermalExpansionCoefficient} onChange={handleChange} className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-lg font-mono text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <button type="button" onClick={applyThermalExpansion} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2">
+                        <RefreshCcw className="w-3 h-3" /> 적용
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2 border-t border-slate-200">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 flex items-center gap-2">
+                      <Thermometer className="w-3.5 h-3.5" /> 적용된 열팽창계수 (계산 반영 중)
+                    </label>
+                    <div className="w-full px-4 py-2 bg-blue-50 border border-blue-100 rounded-lg font-mono text-sm font-bold text-blue-700 flex justify-between items-center">
+                      <span>{formData.appliedThermalExpansionCoefficient}</span>
+                      {formData.thermalExpansionCoefficient !== formData.appliedThermalExpansionCoefficient && (
+                        <span className="text-[9px] text-red-500 animate-pulse font-black">미적용 상태</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <DimensionInput label="목표 냉간치수 (Target Cold Dimension)" data={formData.coldDimension} onChange={(f, v) => handleCategoryChange('coldDimension', f, v)} highlight />
                 <DimensionInput label="목표 열간치수 (Target Hot Dimension)" data={formData.hotDimension} onChange={(f, v) => handleCategoryChange('hotDimension', f, v)} highlight isHot />
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <div className="flex items-center gap-2 text-blue-700 mb-2">
-                    <Info className="w-4 h-4" />
-                    <span className="text-xs font-bold">계산 가이드</span>
-                  </div>
-                  <p className="text-[10px] text-blue-600 leading-relaxed">
-                    목표 냉간치수는 [수주치수 + 실작업여유치]로 계산되며, 목표 열간치수는 [목표 냉간치수 * (1 + 열팽창계수)] 로 자동 계산됩니다. 현장 상황에 따라 직접 수정이 가능합니다.
-                  </p>
+              </div>
+            </div>
+
+            {/* Summary Dashboard */}
+            <div className="lg:col-span-2 p-8 bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl flex flex-wrap gap-12 justify-around items-center">
+              <div className="text-center space-y-3">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">수주 평균 치수</p>
+                <div className="flex items-baseline gap-2 justify-center">
+                  <span className="text-4xl font-mono font-black text-blue-400">
+                    {(( (parseFloat(formData.size.od) || 0) + (parseFloat(formData.size.id) || 0) + (parseFloat(formData.size.t) || 0) ) / 
+                      ([formData.size.od, formData.size.id, formData.size.t].filter(v => v !== '').length || 1)).toFixed(2)}
+                  </span>
+                  <span className="text-slate-500 font-bold text-sm">mm</span>
+                </div>
+              </div>
+              <div className="w-px h-12 bg-slate-800 hidden md:block" />
+              <div className="text-center space-y-3">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">전체 평균 여유치</p>
+                <div className="flex items-baseline gap-2 justify-center">
+                  <span className="text-4xl font-mono font-black text-green-400">
+                    {(formData.measurements.reduce((acc, m) => acc + parseFloat(m.averageMargin), 0) / formData.measurements.length).toFixed(2)}
+                  </span>
+                  <span className="text-slate-500 font-bold text-sm">mm</span>
                 </div>
               </div>
             </div>
@@ -635,6 +776,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     <th className="py-4 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 ID (mm)</th>
                     <th className="py-4 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 T (mm)</th>
                     <th className="py-4 px-4 text-[10px] font-black text-blue-600 uppercase tracking-widest text-center bg-blue-50/30">남은 여유치 (OD/ID/T)</th>
+                    <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">평균치수</th>
                     <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-16">관리</th>
                   </tr>
                 </thead>
@@ -643,6 +785,28 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     <MeasurementRow key={m.round} record={m} onUpdate={handleMeasurementUpdate} onRemove={removeMeasurementRow} canRemove={formData.measurements.length > 2} />
                   ))}
                 </tbody>
+                <tfoot className="bg-slate-900 text-white border-t-2 border-slate-800">
+                  <tr>
+                    <td className="py-4 px-4 text-center text-[10px] font-black uppercase tracking-widest">종합 평균</td>
+                    <td colSpan={3} className="py-4 px-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-xs font-bold text-slate-400 uppercase">전체 평균 치수</span>
+                        <span className="text-lg font-mono font-black text-blue-400">
+                          {(formData.measurements.reduce((acc, m) => acc + parseFloat(m.averageDimension), 0) / formData.measurements.length).toFixed(2)} mm
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-xs font-bold text-slate-400 uppercase">전체 평균 여유치</span>
+                        <span className="text-lg font-mono font-black text-green-400">
+                          {(formData.measurements.reduce((acc, m) => acc + parseFloat(m.averageMargin), 0) / formData.measurements.length).toFixed(2)} mm
+                        </span>
+                      </div>
+                    </td>
+                    <td className="bg-slate-800"></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
@@ -654,9 +818,15 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><User className="w-3.5 h-3.5" /> 작업자</label>
                 <input type="text" name="worker" value={formData.worker} onChange={handleChange} className={`w-full px-4 py-3 bg-slate-50 border ${errors.worker ? 'border-red-500' : 'border-slate-200'} rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold`} placeholder="성명 입력" />
               </div>
-              <div className="space-y-1.5 min-w-[200px]">
-                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> 작업일자</label>
-                <input type="date" name="workDate" value={formData.workDate} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold" />
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> 작업일자 / 조</label>
+                <div className="flex gap-2">
+                  <input type="date" name="workDate" value={formData.workDate} onChange={handleChange} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold" />
+                  <select name="shift" value={formData.shift} onChange={handleChange} className="w-24 px-2 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold">
+                    <option value="Day">주간</option>
+                    <option value="Night">야간</option>
+                  </select>
+                </div>
               </div>
             </div>
             <button type="submit" disabled={isSaved} className={`w-full md:w-64 py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all shadow-xl ${isSaved ? 'bg-green-500 text-white shadow-green-500/20' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-blue-600/30'}`}>
