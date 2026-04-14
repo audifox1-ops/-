@@ -746,8 +746,8 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
   return (
     <div className="space-y-8 pb-20 max-w-7xl mx-auto px-4 sm:px-6">
       {/* Tab Navigation - Refined Technical Style */}
-      <div className="flex items-center justify-center pt-4">
-        <div className="flex p-1 bg-slate-200/50 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-inner">
+      <div className="flex items-center justify-center pt-4 overflow-x-auto pb-2 px-4">
+        <div className="flex p-1 bg-slate-200/50 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-inner whitespace-nowrap">
           <button
             onClick={() => setActiveTab('entry')}
             className={`flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
@@ -794,7 +794,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="bg-white border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden"
           >
-            <div className="bg-slate-900 px-10 py-8 border-b border-slate-800 flex items-center justify-between">
+            <div className="bg-slate-900 px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-5">
                 <div className="bg-orange-600 p-3 rounded-2xl shadow-xl shadow-orange-500/20">
                   <BarChart2 className="w-6 h-6 text-white" />
@@ -816,7 +816,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="bg-white border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden"
           >
-            <div className="bg-slate-900 px-10 py-8 border-b border-slate-800 flex items-center justify-between">
+            <div className="bg-slate-900 px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-5">
                 <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-500/20">
                   <Search className="w-6 h-6 text-white" />
@@ -832,7 +832,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                 </button>
               )}
             </div>
-            <div className="p-10">
+            <div className="p-4 sm:p-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-8 rounded-[1.5rem] border border-slate-200 mb-10 shadow-inner">
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Manufacturing Number</label>
@@ -914,7 +914,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                               <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <TableIcon className="w-4 h-4 text-slate-400" /> 상세 측정 이력 ({searchResults[0].measurements.length}회차)
                               </p>
-                              <div className="overflow-hidden border border-slate-200 rounded-xl">
+                              <div className="overflow-x-auto border border-slate-200 rounded-xl">
                                 <table className="w-full text-left border-collapse">
                                   <thead className="bg-slate-50 border-b border-slate-200">
                                     <tr>
@@ -997,9 +997,9 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-10 space-y-12">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-10 space-y-8 sm:space-y-12 max-w-full overflow-x-hidden">
               {/* Summary Dashboard - Refined Bento Style */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl group transition-all duration-500 hover:border-blue-500/50">
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <Maximize className="w-12 h-12 text-blue-400" />
@@ -1054,7 +1054,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               </div>
 
               {/* Section 1: Basic Info - Structured Grid */}
-              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl relative overflow-hidden">
+              <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] border border-slate-200 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600" />
                 <div className="flex items-center gap-4 mb-10">
                   <div className="bg-blue-50 p-3 rounded-2xl">
@@ -1066,7 +1066,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                       <Hash className="w-3.5 h-3.5 text-blue-500" /> 제조 번호 (Mfg No.)
@@ -1144,7 +1144,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
 
               {/* Section 2: Target Dimensions & Margins */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
+                <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
                   <div className="flex items-center gap-4">
                     <div className="bg-blue-50 p-3 rounded-2xl">
                       <Maximize className="w-5 h-5 text-blue-600" />
@@ -1260,7 +1260,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               </div>
 
               {/* Section 3: Measurement Log - Refined Table */}
-              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
+              <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="bg-blue-50 p-3 rounded-2xl">
@@ -1276,7 +1276,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </button>
                 </div>
 
-                <div className="overflow-hidden rounded-[2rem] border border-slate-200 shadow-2xl">
+                <div className="overflow-x-auto rounded-[2rem] border border-slate-200 shadow-2xl">
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead className="bg-slate-900 border-b border-slate-800">
                       <tr>
@@ -1332,7 +1332,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               </div>
 
               {/* Section 4: Worker & Submit - Refined Footer */}
-              <div className="bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
+              <div className="bg-slate-900 p-6 sm:p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full lg:w-auto">

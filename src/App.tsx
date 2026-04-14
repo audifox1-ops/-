@@ -66,9 +66,9 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Form */}
-        <div className="lg:col-span-8 space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+        {/* Full Width: Form */}
+        <div className="space-y-8">
           <section>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-900">현장 데이터 기록</h2>
@@ -113,66 +113,6 @@ export default function App() {
               </div>
             </div>
           </section>
-        </div>
-
-        {/* Right Column: Recent Activity */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col h-full max-h-[800px]">
-            <div className="px-4 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <History className="w-4 h-4 text-slate-400" />
-                최근 기록 이력
-              </h3>
-              <button className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
-                <Download className="w-3 h-3" />
-                CSV 내보내기
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {records.length === 0 ? (
-                <div className="h-40 flex flex-col items-center justify-center text-slate-400 space-y-2">
-                  <Database className="w-8 h-8 opacity-20" />
-                  <p className="text-sm">저장된 기록이 없습니다.</p>
-                </div>
-              ) : (
-                records.map((record) => (
-                  <motion.div 
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    key={record.id}
-                    className="p-3 border border-slate-100 rounded-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-mono font-bold text-slate-400">
-                          {record.manufacturingNo}
-                        </span>
-                        <span className="text-sm font-bold text-blue-600">
-                          S/N: {record.sn}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">{new Date(record.createdAt).toLocaleTimeString()}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <p className="text-slate-400">Size</p>
-                        <p className="font-semibold">{record.size}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400">작업자</p>
-                        <p className="font-semibold">{record.worker}</p>
-                      </div>
-                      <div className="col-span-2 mt-1 pt-1 border-t border-slate-50 flex justify-between">
-                        <span className="text-orange-600 font-mono">H: {record.hotDimension}</span>
-                        <span className="text-blue-600 font-mono">C: {record.coldDimension}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
         </div>
       </main>
 
