@@ -105,12 +105,14 @@ const MeasurementRow = React.memo(({
   record, 
   onUpdate, 
   onRemove, 
-  canRemove 
+  canRemove,
+  errors
 }: { 
   record: MeasurementRecord; 
   onUpdate: (id: number, field: keyof MeasurementRecord, value: string) => void;
   onRemove: (round: number) => void;
   canRemove: boolean;
+  errors?: Partial<Record<keyof MeasurementRecord, string>>;
 }) => {
   return (
     <tr className="group hover:bg-slate-50 transition-all duration-300">
@@ -126,10 +128,15 @@ const MeasurementRow = React.memo(({
             step="any"
             value={record.measuredOD} 
             onChange={(e) => onUpdate(record.round, 'measuredOD', e.target.value)} 
-            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
+            className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredOD ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
             placeholder="0.00"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">OD</div>
+          {errors?.measuredOD && (
+            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap z-10">
+              {errors.measuredOD}
+            </motion.div>
+          )}
         </div>
       </td>
       <td className="py-6 px-4">
@@ -139,10 +146,15 @@ const MeasurementRow = React.memo(({
             step="any"
             value={record.measuredID} 
             onChange={(e) => onUpdate(record.round, 'measuredID', e.target.value)} 
-            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
+            className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredID ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
             placeholder="0.00"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">ID</div>
+          {errors?.measuredID && (
+            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap z-10">
+              {errors.measuredID}
+            </motion.div>
+          )}
         </div>
       </td>
       <td className="py-6 px-4">
@@ -152,10 +164,15 @@ const MeasurementRow = React.memo(({
             step="any"
             value={record.measuredT} 
             onChange={(e) => onUpdate(record.round, 'measuredT', e.target.value)} 
-            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
+            className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredT ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
             placeholder="0.00"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">T</div>
+          {errors?.measuredT && (
+            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap z-10">
+              {errors.measuredT}
+            </motion.div>
+          )}
         </div>
       </td>
       <td className="py-6 px-8 text-center">
@@ -185,7 +202,8 @@ const DimensionInput = React.memo(({
   highlight = false,
   isHot = false,
   isTarget = false,
-  max
+  max,
+  errors
 }: { 
   label: string; 
   data: DimensionSet; 
@@ -194,8 +212,9 @@ const DimensionInput = React.memo(({
   isHot?: boolean;
   isTarget?: boolean;
   max?: number;
+  errors?: Partial<Record<keyof DimensionSet, string>>;
 }) => (
-  <div className={`p-6 rounded-[2rem] border transition-all duration-500 ${highlight ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-200 shadow-sm hover:shadow-md'}`}>
+  <div className={`p-6 rounded-[2rem] border transition-all duration-500 ${highlight ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-200 shadow-sm hover:shadow-md'} ${Object.values(errors || {}).some(e => e) ? 'ring-2 ring-red-500/50' : ''}`}>
     <div className="flex items-center justify-between mb-5">
       <div className="flex items-center gap-3">
         <div className={`w-1.5 h-1.5 rounded-full ${isHot ? 'bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]' : highlight ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-300'}`} />
@@ -217,10 +236,15 @@ const DimensionInput = React.memo(({
             if (max && parseFloat(val) > max) return;
             onChange('od', val);
           }} 
-          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
+          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${errors?.od ? 'border-red-500 ring-4 ring-red-500/10' : highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
           placeholder="0.00"
         />
-        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>OD</span>
+        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${errors?.od ? 'bg-red-500 text-white' : highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>OD</span>
+        {errors?.od && (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg z-10">
+            {errors.od}
+          </motion.div>
+        )}
       </div>
       <div className="relative group/input">
         <input 
@@ -233,10 +257,15 @@ const DimensionInput = React.memo(({
             if (max && parseFloat(val) > max) return;
             onChange('id', val);
           }} 
-          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
+          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${errors?.id ? 'border-red-500 ring-4 ring-red-500/10' : highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
           placeholder="0.00"
         />
-        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>ID</span>
+        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${errors?.id ? 'bg-red-500 text-white' : highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>ID</span>
+        {errors?.id && (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg z-10">
+            {errors.id}
+          </motion.div>
+        )}
       </div>
       <div className="relative group/input">
         <input 
@@ -249,10 +278,15 @@ const DimensionInput = React.memo(({
             if (max && parseFloat(val) > max) return;
             onChange('t', val);
           }} 
-          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
+          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${errors?.t ? 'border-red-500 ring-4 ring-red-500/10' : highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
           placeholder="0.00"
         />
-        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>T</span>
+        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${errors?.t ? 'bg-red-500 text-white' : highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>T</span>
+        {errors?.t && (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg z-10">
+            {errors.t}
+          </motion.div>
+        )}
       </div>
     </div>
   </div>
@@ -548,19 +582,51 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     setSearchResults(filtered);
   }, [searchMfgNo, searchSN, allRecords]);
 
+  // Validation Logic
+  const validateField = useCallback((name: string, value: any) => {
+    let error = '';
+    if (name === 'manufacturingNo') {
+      if (!value) error = '제조번호를 입력해주세요.';
+    } else if (name === 'sn') {
+      if (!value) error = 'S/N을 입력해주세요.';
+      else if (parseFloat(value) <= 0) error = 'S/N은 0보다 커야 합니다.';
+    } else if (name === 'worker') {
+      if (!value) error = '작업자 성명을 입력해주세요.';
+    } else if (name === 'thermalExpansionCoefficient') {
+      if (value === '' || value === undefined) error = '계수를 입력해주세요.';
+      else if (parseFloat(value) < 0) error = '0 이상 입력';
+    }
+    return error;
+  }, []);
+
+  const validateDimension = useCallback((category: string, field: string, value: string) => {
+    if (!value) return '필수';
+    const num = parseFloat(value);
+    if (isNaN(num)) return '숫자';
+    if (num <= 0) return '> 0';
+    if (num > 12000) return '< 12k';
+    return '';
+  }, []);
+
   const handleCategoryChange = useCallback((category: keyof FormState, field: keyof DimensionSet, value: string) => {
     setFormData(prev => ({
       ...prev,
       [category]: { ...(prev[category] as DimensionSet), [field]: value }
     }));
-  }, []);
+    
+    const error = validateDimension(category, field, value);
+    setErrors(prev => ({ ...prev, [`${category}.${field}`]: error }));
+  }, [validateDimension]);
 
   const handleMeasurementUpdate = useCallback((round: number, field: keyof MeasurementRecord, value: string) => {
     setFormData(prev => ({
       ...prev,
       measurements: prev.measurements.map(m => m.round === round ? { ...m, [field]: value } : m)
     }));
-  }, []);
+
+    const error = validateDimension('측정', field, value);
+    setErrors(prev => ({ ...prev, [`measurements.${round}.${field}`]: error }));
+  }, [validateDimension]);
 
   const addMeasurementRow = useCallback(() => {
     setFormData(prev => {
@@ -576,31 +642,53 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
       const reindexed = filtered.map((m, idx) => ({ ...m, round: idx + 1 }));
       return { ...prev, measurements: reindexed };
     });
+    // Clear errors for removed row
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith(`measurements.${round}`)) delete newErrors[key];
+      });
+      return newErrors;
+    });
   }, []);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    const val = type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? (value === '' ? '' : parseFloat(value)) : value
+      [name]: val
     }));
-    setErrors(prev => ({ ...prev, [name]: undefined }));
-  }, []);
+    
+    const error = validateField(name, val);
+    setErrors(prev => ({ ...prev, [name]: error }));
+  }, [validateField]);
 
   const validate = () => {
     const newErrors: Partial<Record<string, string>> = {};
-    if (!formData.manufacturingNo) newErrors.manufacturingNo = '제조번호 확인';
-    if (!formData.sn) newErrors.sn = 'S/N 확인';
-    if (!formData.worker) newErrors.worker = '작업자 확인';
-    if (!formData.size.od || !formData.size.id || !formData.size.t) newErrors.size = '수주치수 확인';
     
-    const sOD = parseFloat(formData.size.od);
-    const sID = parseFloat(formData.size.id);
-    const sT = parseFloat(formData.size.t);
-    if (sOD > 12000 || sID > 12000 || sT > 12000) newErrors.size = '수주치수 최대 12000mm';
+    // Basic fields
+    newErrors.manufacturingNo = validateField('manufacturingNo', formData.manufacturingNo);
+    newErrors.sn = validateField('sn', formData.sn);
+    newErrors.worker = validateField('worker', formData.worker);
+    
+    // Size fields
+    ['od', 'id', 't'].forEach(f => {
+      const err = validateDimension('수주치수', f, formData.size[f as keyof DimensionSet]);
+      if (err) newErrors[`size.${f}`] = err;
+    });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    // Measurements
+    formData.measurements.forEach(m => {
+      ['measuredOD', 'measuredID', 'measuredT'].forEach(f => {
+        const err = validateDimension('측정', f, m[f as keyof MeasurementRecord] as string);
+        if (err) newErrors[`measurements.${m.round}.${f}`] = err;
+      });
+    });
+
+    const filteredErrors = Object.fromEntries(Object.entries(newErrors).filter(([_, v]) => v));
+    setErrors(filteredErrors);
+    return Object.keys(filteredErrors).length === 0;
   };
 
   const formatDim = (dim: DimensionSet) => `${dim.od} x ${dim.id} x ${dim.t} mm`;
@@ -985,11 +1073,17 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     </label>
                     <input 
                       type="text" 
+                      name="manufacturingNo"
                       value={formData.manufacturingNo} 
-                      onChange={handleMfgNoChange} 
-                      className={`w-full px-5 py-4 bg-slate-50 border ${errors.manufacturingNo ? 'border-red-500' : 'border-slate-100'} rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all font-mono text-sm font-bold shadow-inner`} 
+                      onChange={handleChange} 
+                      className={`w-full px-5 py-4 bg-slate-50 border ${errors.manufacturingNo ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all font-mono text-sm font-bold shadow-inner`} 
                       placeholder="000000-00000-000" 
                     />
+                    {errors.manufacturingNo && (
+                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.manufacturingNo}
+                      </motion.p>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -1001,9 +1095,14 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       value={formData.sn} 
                       onChange={handleChange} 
                       onBlur={handleSNBlur} 
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all font-mono text-sm font-bold shadow-inner" 
+                      className={`w-full px-5 py-4 bg-slate-50 border ${errors.sn ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all font-mono text-sm font-bold shadow-inner`} 
                       placeholder="001" 
                     />
+                    {errors.sn && (
+                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.sn}
+                      </motion.p>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -1058,7 +1157,18 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   
                   <div className="space-y-6">
                     <div className="space-y-4">
-                      <DimensionInput label="목표 치수 (수주치수)" data={formData.size} onChange={(f, v) => handleCategoryChange('size', f, v)} isTarget max={12000} />
+                      <DimensionInput 
+                        label="목표 치수 (수주치수)" 
+                        data={formData.size} 
+                        onChange={(f, v) => handleCategoryChange('size', f, v)} 
+                        isTarget 
+                        max={12000} 
+                        errors={{
+                          od: errors['size.od'],
+                          id: errors['size.id'],
+                          t: errors['size.t']
+                        }}
+                      />
                       {(formData.size.od || formData.size.id || formData.size.t) && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-6 py-4 bg-slate-900 rounded-2xl flex justify-between items-center shadow-2xl border border-slate-800">
                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">규격 형식 (Formatted Spec)</span>
@@ -1069,8 +1179,26 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       )}
                     </div>
                     <div className="grid grid-cols-1 gap-4">
-                      <DimensionInput label="표준 여유치 (Standard Margin)" data={formData.margin} onChange={(f, v) => handleCategoryChange('margin', f, v)} />
-                      <DimensionInput label="실작업 여유치 (Applied Work Margin)" data={formData.appliedMargin} onChange={(f, v) => handleCategoryChange('appliedMargin', f, v)} />
+                      <DimensionInput 
+                        label="표준 여유치 (Standard Margin)" 
+                        data={formData.margin} 
+                        onChange={(f, v) => handleCategoryChange('margin', f, v)} 
+                        errors={{
+                          od: errors['margin.od'],
+                          id: errors['margin.id'],
+                          t: errors['margin.t']
+                        }}
+                      />
+                      <DimensionInput 
+                        label="실작업 여유치 (Applied Work Margin)" 
+                        data={formData.appliedMargin} 
+                        onChange={(f, v) => handleCategoryChange('appliedMargin', f, v)} 
+                        errors={{
+                          od: errors['appliedMargin.od'],
+                          id: errors['appliedMargin.id'],
+                          t: errors['appliedMargin.t']
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1093,11 +1221,23 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                           <Thermometer className="w-4 h-4 text-orange-500" /> 열팽창 계수 (Expansion Coefficient)
                         </label>
                         <div className="flex gap-4">
-                          <input type="number" name="thermalExpansionCoefficient" step="any" value={formData.thermalExpansionCoefficient} onChange={handleChange} className="flex-1 px-5 py-4 bg-white border border-slate-200 rounded-2xl font-mono text-sm font-bold outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 transition-all shadow-sm" />
+                          <input 
+                            type="number" 
+                            name="thermalExpansionCoefficient" 
+                            step="any" 
+                            value={formData.thermalExpansionCoefficient} 
+                            onChange={handleChange} 
+                            className={`flex-1 px-5 py-4 bg-white border ${errors.thermalExpansionCoefficient ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200'} rounded-2xl font-mono text-sm font-bold outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 transition-all shadow-sm`} 
+                          />
                           <button type="button" onClick={applyThermalExpansion} className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">
                             적용 (Apply)
                           </button>
                         </div>
+                        {errors.thermalExpansionCoefficient && (
+                          <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> {errors.thermalExpansionCoefficient}
+                          </motion.p>
+                        )}
                       </div>
                       <div className="space-y-4 pt-6 border-t border-slate-200">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">
@@ -1149,7 +1289,18 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {formData.measurements.map((m) => (
-                        <MeasurementRow key={m.round} record={m} onUpdate={handleMeasurementUpdate} onRemove={removeMeasurementRow} canRemove={formData.measurements.length > 2} />
+                        <MeasurementRow 
+                          key={m.round} 
+                          record={m} 
+                          onUpdate={handleMeasurementUpdate} 
+                          onRemove={removeMeasurementRow} 
+                          canRemove={formData.measurements.length > 2} 
+                          errors={{
+                            measuredOD: errors[`measurements.${m.round}.measuredOD`],
+                            measuredID: errors[`measurements.${m.round}.measuredID`],
+                            measuredT: errors[`measurements.${m.round}.measuredT`]
+                          }}
+                        />
                       ))}
                     </tbody>
                     <tfoot className="bg-slate-900 text-white border-t border-slate-800">
@@ -1194,9 +1345,14 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       name="worker" 
                       value={formData.worker} 
                       onChange={handleChange} 
-                      className={`w-full px-6 py-4 bg-slate-800 border ${errors.worker ? 'border-red-500' : 'border-slate-700'} rounded-2xl focus:ring-8 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-bold text-white shadow-inner placeholder:text-slate-600`} 
+                      className={`w-full px-6 py-4 bg-slate-800 border ${errors.worker ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-700'} rounded-2xl focus:ring-8 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-bold text-white shadow-inner placeholder:text-slate-600`} 
                       placeholder="작업자 성명을 입력하세요" 
                     />
+                    {errors.worker && (
+                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.worker}
+                      </motion.p>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
