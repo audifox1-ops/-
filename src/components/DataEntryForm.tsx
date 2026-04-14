@@ -1585,18 +1585,27 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                           <div className="flex flex-col items-center">
                             <span className="font-mono font-black text-blue-400 text-2xl">{averages.od}</span>
                             <span className="text-[8px] text-slate-600 uppercase tracking-widest mt-1">평균 OD</span>
+                            <div className={`text-[10px] font-black mt-2 ${parseFloat(averages.marginOD) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                              평균 여유치: {parseFloat(averages.marginOD) >= 0 ? `+${averages.marginOD}` : averages.marginOD}
+                            </div>
                           </div>
                         </td>
                         <td className="py-8 px-4 text-center">
                           <div className="flex flex-col items-center">
                             <span className="font-mono font-black text-blue-400 text-2xl">{averages.id}</span>
                             <span className="text-[8px] text-slate-600 uppercase tracking-widest mt-1">평균 ID</span>
+                            <div className={`text-[10px] font-black mt-2 ${parseFloat(averages.marginID) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                              평균 여유치: {parseFloat(averages.marginID) >= 0 ? `+${averages.marginID}` : averages.marginID}
+                            </div>
                           </div>
                         </td>
                         <td className="py-8 px-4 text-center">
                           <div className="flex flex-col items-center">
                             <span className="font-mono font-black text-blue-400 text-2xl">{averages.t}</span>
                             <span className="text-[8px] text-slate-600 uppercase tracking-widest mt-1">평균 T</span>
+                            <div className={`text-[10px] font-black mt-2 ${parseFloat(averages.marginT) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                              평균 여유치: {parseFloat(averages.marginT) >= 0 ? `+${averages.marginT}` : averages.marginT}
+                            </div>
                           </div>
                         </td>
                         <td className="bg-slate-800/50"></td>

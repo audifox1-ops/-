@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "RingMillRecord": {
+      "title": "Ring Mill Record",
+      "description": "A record of ring mill forging dimensions and metadata",
+      "type": "object",
+      "properties": {
+        "manufacturingNo": { "type": "string", "description": "Manufacturing number" },
+        "sn": { "type": "string", "description": "Serial number" },
+        "material": { "type": "string", "description": "Material type" },
+        "heatTreatmentType": { "type": "string", "description": "Heat treatment type" },
+        "size": { "type": "string", "description": "Target size string" },
+        "margin": { "type": "string", "description": "Standard margin string" },
+        "appliedMargin": { "type": "string", "description": "Applied margin string" },
+        "thermalExpansionCoefficient": { "type": "number", "description": "Thermal expansion coefficient" },
+        "appliedThermalExpansionCoefficient": { "type": "number", "description": "Applied thermal expansion coefficient" },
+        "coldDimension": { "type": "string", "description": "Target cold dimension string" },
+        "hotDimension": { "type": "string", "description": "Target hot dimension string" },
+        "worker": { "type": "string", "description": "Worker name" },
+        "workDate": { "type": "string", "description": "Work date (YYYY-MM-DD)" },
+        "shift": { "type": "string", "description": "Work shift (Day/Night)" },
+        "measurements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "round": { "type": "number" },
+              "measuredOD": { "type": "string" },
+              "measuredID": { "type": "string" },
+              "measuredT": { "type": "string" },
+              "remainingOD": { "type": "string" },
+              "remainingID": { "type": "string" },
+              "remainingT": { "type": "string" },
+              "averageDimension": { "type": "string" },
+              "averageMargin": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string", "description": "User ID of the creator" }
+      },
+      "required": ["manufacturingNo", "sn", "worker", "workDate", "uid"]
+    }
+  },
+  "firestore": {
+    "/records/{recordId}": {
+      "schema": "RingMillRecord",
+      "description": "Collection of ring mill measurement records"
+    }
+  }
+}
