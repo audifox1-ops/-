@@ -17,7 +17,8 @@ import {
   LogIn,
   LogOut,
   User as UserIcon,
-  CloudOff
+  CloudOff,
+  AlertCircle
 } from 'lucide-react';
 import { 
   signInAnonymously,
@@ -38,27 +39,41 @@ import { auth, db } from './firebase';
 import DataEntryForm from './components/DataEntryForm';
 import { RingMillData, RingMillDataInput } from './types/RingMillData';
 
+// Fallback UID for when auth is restricted
+const getLocalUid = () => {
+  let uid = localStorage.getItem('ringmill_local_uid');
+  if (!uid) {
+    uid = 'local_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('ringmill_local_uid', uid);
+  }
+  return uid;
+};
+
 export default function App() {
   const [records, setRecords] = useState<RingMillData[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // Automatically sign in anonymously if no user
-        signInAnonymously(auth).catch(err => console.error("Anonymous Auth Error:", err));
-      }
       setUser(user);
       setIsAuthReady(true);
     });
+
+    // Try anonymous sign in, but don't block if it fails
+    signInAnonymously(auth).catch(err => {
+      console.warn("Anonymous Auth Restricted:", err.message);
+      setAuthError("인증 서버 제한으로 인해 비로그인 모드로 동작합니다.");
+      setIsAuthReady(true); // Still mark as ready to allow data access
+    });
+
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!isAuthReady) return;
-
+    // We want to fetch records even if auth fails (rules will be updated to allow this)
     const q = query(collection(db, 'records'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newRecords = snapshot.docs.map(doc => ({
@@ -71,13 +86,13 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [isAuthReady]);
+  }, []);
 
   const handleSave = async (data: RingMillDataInput) => {
     try {
       await addDoc(collection(db, 'records'), {
         ...data,
-        uid: user?.uid || 'anonymous',
+        uid: user?.uid || getLocalUid(),
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
@@ -107,6 +122,12 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {authError && (
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-100">
+                <AlertCircle className="w-3 h-3 text-amber-500" />
+                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tight">{authError}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-100">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">실시간 동기화 중</span>
