@@ -193,6 +193,19 @@ const MeasurementRow = React.memo(({
 MeasurementRow.displayName = 'MeasurementRow';
 
 /**
+ * FormFieldTooltip Component
+ */
+const FormFieldTooltip = ({ text }: { text: string }) => (
+  <div className="group relative inline-block ml-1">
+    <Info className="w-3 h-3 text-slate-300 cursor-help hover:text-blue-500 transition-colors" />
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 p-2 bg-slate-900 text-white text-[10px] font-medium rounded-lg shadow-xl z-50 text-center normal-case tracking-normal">
+      {text}
+      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+    </div>
+  </div>
+);
+
+/**
  * DimensionInput Component
  */
 const DimensionInput = React.memo(({ 
@@ -203,7 +216,8 @@ const DimensionInput = React.memo(({
   isHot = false,
   isTarget = false,
   max,
-  errors
+  errors,
+  tooltip
 }: { 
   label: string; 
   data: DimensionSet; 
@@ -213,13 +227,15 @@ const DimensionInput = React.memo(({
   isTarget?: boolean;
   max?: number;
   errors?: Partial<Record<keyof DimensionSet, string>>;
+  tooltip?: string;
 }) => (
   <div className={`p-6 rounded-[2rem] border transition-all duration-500 ${highlight ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-200 shadow-sm hover:shadow-md'} ${Object.values(errors || {}).some(e => e) ? 'ring-2 ring-red-500/50' : ''}`}>
     <div className="flex items-center justify-between mb-5">
       <div className="flex items-center gap-3">
         <div className={`w-1.5 h-1.5 rounded-full ${isHot ? 'bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]' : highlight ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-300'}`} />
-        <label className={`text-[10px] font-black uppercase tracking-[0.2em] ${highlight ? 'text-blue-400' : 'text-slate-400'}`}>
+        <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center ${highlight ? 'text-blue-400' : 'text-slate-400'}`}>
           {label}
+          {tooltip && <FormFieldTooltip text={tooltip} />}
         </label>
       </div>
       {isTarget && <span className="text-[8px] font-black text-blue-500/50 uppercase tracking-widest bg-blue-500/5 px-2 py-1 rounded-md">Reference</span>}
@@ -317,23 +333,103 @@ const StatsDashboard = ({ records }: { records: RingMillData[] }) => {
     value: materialStats[key]
   }));
 
-  const timelineData = records.slice(-10).map(r => ({
+  const shiftStats = records.reduce((acc: any, curr) => {
+    acc[curr.shift] = (acc[curr.shift] || 0) + 1;
+    return acc;
+  }, {});
+
+  const shiftData = Object.keys(shiftStats).map(key => ({
+    name: key,
+    value: shiftStats[key]
+  }));
+
+  const heatStats = records.reduce((acc: any, curr) => {
+    acc[curr.heatTreatmentType || 'N/A'] = (acc[curr.heatTreatmentType || 'N/A'] || 0) + 1;
+    return acc;
+  }, {});
+
+  const heatData = Object.keys(heatStats).map(key => ({
+    name: key,
+    value: heatStats[key]
+  }));
+
+  const timelineData = records.slice(-15).map(r => ({
     date: r.workDate,
     od: parseFloat(r.measurements[r.measurements.length - 1]?.measuredOD || '0'),
     id: parseFloat(r.measurements[r.measurements.length - 1]?.measuredID || '0'),
     t: parseFloat(r.measurements[r.measurements.length - 1]?.measuredT || '0'),
+    margin: parseFloat(r.measurements[r.measurements.length - 1]?.averageMargin || '0'),
   }));
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+  const handleExportAll = () => {
+    let csvContent = "제조번호,S/N,규격,재질,열처리,작업자,작업일자,교대,최종 측정 OD,최종 측정 ID,최종 측정 T,평균 여유치\n";
+    records.forEach(record => {
+      const lastM = record.measurements[record.measurements.length - 1];
+      csvContent += `${record.manufacturingNo},${record.sn},"${record.size}",${record.material},${record.heatTreatmentType},${record.worker},${record.workDate},${record.shift},${lastM?.measuredOD || '-'},${lastM?.measuredID || '-'},${lastM?.measuredT || '-'},${lastM?.averageMargin || '-'}\n`;
+    });
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `ring_mill_all_records_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportChartData = () => {
+    let csvContent = "--- 재질 분포 (Material Distribution) ---\n";
+    csvContent += "재질,수량\n";
+    materialData.forEach(d => csvContent += `${d.name},${d.value}\n`);
+    
+    csvContent += "\n--- 열처리 분포 (Heat Treatment Distribution) ---\n";
+    csvContent += "유형,수량\n";
+    heatData.forEach(d => csvContent += `${d.name},${d.value}\n`);
+    
+    csvContent += "\n--- 교대 분석 (Shift Analysis) ---\n";
+    csvContent += "교대,수량\n";
+    shiftData.forEach(d => csvContent += `${d.name},${d.value}\n`);
+    
+    csvContent += "\n--- 최근 측정 추세 (Recent Trends - Last 15) ---\n";
+    csvContent += "일자,OD,ID,T,평균 여유치\n";
+    timelineData.forEach(d => csvContent += `${d.date},${d.od},${d.id},${d.t},${d.margin}\n`);
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `ring_mill_chart_stats_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
-    <div className="space-y-8 p-10">
+    <div className="space-y-8 p-6 sm:p-10">
+      <div className="flex flex-wrap justify-end gap-4">
+        <button 
+          onClick={handleExportChartData}
+          className="flex items-center gap-2 px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-2xl text-xs font-black hover:bg-slate-50 transition-all shadow-lg uppercase tracking-widest"
+        >
+          <BarChart2 className="w-4 h-4 text-blue-500" /> 차트 데이터 내보내기
+        </button>
+        <button 
+          onClick={handleExportAll}
+          className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 uppercase tracking-widest"
+        >
+          <Download className="w-4 h-4" /> 전체 데이터 내보내기 (CSV)
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-            <PieChartIcon className="w-5 h-5 text-blue-500" /> 재질별 분포
+            <PieChartIcon className="w-5 h-5 text-blue-500" /> 재질 및 열처리 분포
           </h3>
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full flex flex-col sm:flex-row">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -341,24 +437,53 @@ const StatsDashboard = ({ records }: { records: RingMillData[] }) => {
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={100}
+                  outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
                   {materialData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={heatData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {heatData.map((entry, index) => (
+                    <Cell key={`cell-heat-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-8 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase">Material</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-orange-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase">Heat Treatment</span>
+            </div>
           </div>
         </div>
 
         <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-500" /> 최근 측정 추세 (최종 OD)
+            <TrendingUp className="w-5 h-5 text-green-500" /> 최근 측정 추세 및 여유치 분석
           </h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -366,36 +491,70 @@ const StatsDashboard = ({ records }: { records: RingMillData[] }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="od" stroke="#3b82f6" strokeWidth={3} name="OD" dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="id" stroke="#10b981" strokeWidth={3} name="ID" dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="t" stroke="#f59e0b" strokeWidth={3} name="T" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
+                <Line type="monotone" dataKey="od" stroke="#3b82f6" strokeWidth={3} name="OD" dot={{ r: 4, fill: '#3b82f6' }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="margin" stroke="#ef4444" strokeWidth={3} name="Avg Margin" dot={{ r: 4, fill: '#ef4444' }} strokeDasharray="5 5" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
-        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-          <BarChart2 className="w-5 h-5 text-orange-500" /> 작업자별 생산량
-        </h3>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={records.reduce((acc: any[], curr) => {
-              const worker = acc.find(a => a.name === curr.worker);
-              if (worker) worker.count++;
-              else acc.push({ name: curr.worker, count: 1 });
-              return acc;
-            }, [])}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis fontSize={10} tickLine={false} axisLine={false} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#3b82f6" name="생산량" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-orange-500" /> 작업자별 생산량 및 교대 분석
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={records.reduce((acc: any[], curr) => {
+                const worker = acc.find(a => a.name === curr.worker);
+                if (worker) {
+                  worker.count++;
+                  worker[curr.shift] = (worker[curr.shift] || 0) + 1;
+                } else {
+                  acc.push({ name: curr.worker, count: 1, [curr.shift]: 1 });
+                }
+                return acc;
+              }, [])}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
+                <Bar dataKey="Day" stackId="a" fill="#3b82f6" name="Day Shift" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="Night" stackId="a" fill="#1e293b" name="Night Shift" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-purple-500" /> 교대별 가동률 분포
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={shiftData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={110}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  <Cell fill="#3b82f6" />
+                  <Cell fill="#1e293b" />
+                </Pie>
+                <Tooltip />
+                <Legend verticalAlign="bottom" height={36}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
@@ -1066,10 +1225,11 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                       <Hash className="w-3.5 h-3.5 text-blue-500" /> 제조 번호 (Mfg No.)
+                      <FormFieldTooltip text="제조 공정 식별 번호 (예: 000000-00000-000)" />
                     </label>
                     <input 
                       type="text" 
@@ -1088,6 +1248,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                       <Settings className="w-3.5 h-3.5 text-blue-500" /> 일련 번호 (S/N)
+                      <FormFieldTooltip text="개별 제품의 고유 일련 번호 (3자리 숫자)" />
                     </label>
                     <input 
                       type="number" 
@@ -1107,6 +1268,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                       <TableIcon className="w-3.5 h-3.5 text-blue-500" /> 재질 (Material)
+                      <FormFieldTooltip text="제품 제작에 사용된 원자재 종류" />
                     </label>
                     <input 
                       type="text" 
@@ -1120,6 +1282,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                       <RefreshCcw className="w-3.5 h-3.5 text-blue-500" /> 열처리 (Heat Treatment)
+                      <FormFieldTooltip text="제품에 적용된 열처리 공정 방식" />
                     </label>
                     <div className="relative">
                       <select 
@@ -1159,6 +1322,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     <div className="space-y-4">
                       <DimensionInput 
                         label="목표 치수 (수주치수)" 
+                        tooltip="고객 주문서상의 최종 완제품 규격"
                         data={formData.size} 
                         onChange={(f, v) => handleCategoryChange('size', f, v)} 
                         isTarget 
@@ -1181,6 +1345,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                     <div className="grid grid-cols-1 gap-4">
                       <DimensionInput 
                         label="표준 여유치 (Standard Margin)" 
+                        tooltip="공정 표준으로 정해진 가공 여유치"
                         data={formData.margin} 
                         onChange={(f, v) => handleCategoryChange('margin', f, v)} 
                         errors={{
@@ -1191,6 +1356,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       />
                       <DimensionInput 
                         label="실작업 여유치 (Applied Work Margin)" 
+                        tooltip="실제 작업에 적용할 보정된 여유치"
                         data={formData.appliedMargin} 
                         onChange={(f, v) => handleCategoryChange('appliedMargin', f, v)} 
                         errors={{
@@ -1219,6 +1385,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                           <Thermometer className="w-4 h-4 text-orange-500" /> 열팽창 계수 (Expansion Coefficient)
+                          <FormFieldTooltip text="온도 변화에 따른 소재의 팽창 비율" />
                         </label>
                         <div className="flex gap-4">
                           <input 
@@ -1252,8 +1419,21 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                       </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4">
-                      <DimensionInput label="목표 냉간 치수 (Target Cold)" data={formData.coldDimension} onChange={(f, v) => handleCategoryChange('coldDimension', f, v)} highlight />
-                      <DimensionInput label="목표 열간 치수 (Target Hot)" data={formData.hotDimension} onChange={(f, v) => handleCategoryChange('hotDimension', f, v)} highlight isHot />
+                      <DimensionInput 
+                        label="목표 냉간 치수 (Target Cold)" 
+                        tooltip="열팽창이 고려되지 않은 상온 상태의 목표 규격"
+                        data={formData.coldDimension} 
+                        onChange={(f, v) => handleCategoryChange('coldDimension', f, v)} 
+                        highlight 
+                      />
+                      <DimensionInput 
+                        label="목표 열간 치수 (Target Hot)" 
+                        tooltip="열팽창 계수가 적용된 가공 시점의 목표 규격"
+                        data={formData.hotDimension} 
+                        onChange={(f, v) => handleCategoryChange('hotDimension', f, v)} 
+                        highlight 
+                        isHot 
+                      />
                     </div>
                   </div>
                 </div>
@@ -1338,7 +1518,8 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full lg:w-auto">
                   <div className="space-y-3 min-w-[280px]">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                      <User className="w-4 h-4 text-blue-500" /> 작업자 정보 (Operator Identity)
+                      <User className="w-4 h-4 text-blue-500" /> 작업자 (Operator)
+                      <FormFieldTooltip text="해당 공정을 수행하는 작업자 성명" />
                     </label>
                     <input 
                       type="text" 
@@ -1356,7 +1537,8 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-blue-500" /> 일정 및 교대 (Schedule & Shift)
+                      <Calendar className="w-4 h-4 text-blue-500" /> 작업 일정 (Schedule)
+                      <FormFieldTooltip text="작업 일자 및 근무 교대 시간대" />
                     </label>
                     <div className="flex gap-3">
                       <input 
