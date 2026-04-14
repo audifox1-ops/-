@@ -106,14 +106,30 @@ const MeasurementRow = React.memo(({
   onUpdate, 
   onRemove, 
   canRemove,
-  errors
+  errors,
+  targetSize
 }: { 
   record: MeasurementRecord; 
   onUpdate: (id: number, field: keyof MeasurementRecord, value: string) => void;
   onRemove: (round: number) => void;
   canRemove: boolean;
   errors?: Partial<Record<keyof MeasurementRecord, string>>;
+  targetSize: { od: string; id: string; t: string };
 }) => {
+  const getMargin = (measured: string, target: string) => {
+    const m = parseFloat(measured);
+    const t = parseFloat(target);
+    if (!isNaN(m) && !isNaN(t) && t > 0) {
+      const margin = m - t;
+      return margin > 0 ? `+${margin.toFixed(2)}` : margin.toFixed(2);
+    }
+    return null;
+  };
+
+  const marginOD = getMargin(record.measuredOD, targetSize.od);
+  const marginID = getMargin(record.measuredID, targetSize.id);
+  const marginT = getMargin(record.measuredT, targetSize.t);
+
   return (
     <tr className="group hover:bg-slate-50 transition-all duration-300">
       <td className="py-6 px-8 text-center">
@@ -122,16 +138,23 @@ const MeasurementRow = React.memo(({
         </div>
       </td>
       <td className="py-6 px-4">
-        <div className="relative group/input">
-          <input 
-            type="number" 
-            step="any"
-            value={record.measuredOD} 
-            onChange={(e) => onUpdate(record.round, 'measuredOD', e.target.value)} 
-            className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredOD ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
-            placeholder="0.00"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">OD</div>
+        <div className="relative group/input flex flex-col items-center">
+          <div className="relative w-full">
+            <input 
+              type="number" 
+              step="any"
+              value={record.measuredOD} 
+              onChange={(e) => onUpdate(record.round, 'measuredOD', e.target.value)} 
+              className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredOD ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
+              placeholder="0.00"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">OD</div>
+          </div>
+          {marginOD && (
+            <div className={`text-[10px] font-black mt-2 ${parseFloat(marginOD) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+              여유치: {marginOD}
+            </div>
+          )}
           {errors?.measuredOD && (
             <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap z-10">
               {errors.measuredOD}
@@ -140,16 +163,23 @@ const MeasurementRow = React.memo(({
         </div>
       </td>
       <td className="py-6 px-4">
-        <div className="relative group/input">
-          <input 
-            type="number" 
-            step="any"
-            value={record.measuredID} 
-            onChange={(e) => onUpdate(record.round, 'measuredID', e.target.value)} 
-            className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredID ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
-            placeholder="0.00"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">ID</div>
+        <div className="relative group/input flex flex-col items-center">
+          <div className="relative w-full">
+            <input 
+              type="number" 
+              step="any"
+              value={record.measuredID} 
+              onChange={(e) => onUpdate(record.round, 'measuredID', e.target.value)} 
+              className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredID ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
+              placeholder="0.00"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">ID</div>
+          </div>
+          {marginID && (
+            <div className={`text-[10px] font-black mt-2 ${parseFloat(marginID) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+              여유치: {marginID}
+            </div>
+          )}
           {errors?.measuredID && (
             <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap z-10">
               {errors.measuredID}
@@ -158,16 +188,23 @@ const MeasurementRow = React.memo(({
         </div>
       </td>
       <td className="py-6 px-4">
-        <div className="relative group/input">
-          <input 
-            type="number" 
-            step="any"
-            value={record.measuredT} 
-            onChange={(e) => onUpdate(record.round, 'measuredT', e.target.value)} 
-            className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredT ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
-            placeholder="0.00"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">T</div>
+        <div className="relative group/input flex flex-col items-center">
+          <div className="relative w-full">
+            <input 
+              type="number" 
+              step="any"
+              value={record.measuredT} 
+              onChange={(e) => onUpdate(record.round, 'measuredT', e.target.value)} 
+              className={`w-full px-4 py-4 bg-slate-50 border ${errors?.measuredT ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-100'} rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner`}
+              placeholder="0.00"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">T</div>
+          </div>
+          {marginT && (
+            <div className={`text-[10px] font-black mt-2 ${parseFloat(marginT) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+              여유치: {marginT}
+            </div>
+          )}
           {errors?.measuredT && (
             <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[7px] font-black px-2 py-0.5 rounded-full whitespace-nowrap z-10">
               {errors.measuredT}
@@ -884,19 +921,13 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     const sID = parseFloat(formData.size.id) || 0;
     const sT = parseFloat(formData.size.t) || 0;
 
-    const overallAvg = (avgOD + avgID + avgT) / 3;
-    const sizeAvg = (sOD + sID + sT) / 3;
-    const overallMargin = overallAvg - sizeAvg;
-
     return {
       od: avgOD.toFixed(2),
       id: avgID.toFixed(2),
       t: avgT.toFixed(2),
-      rod: (avgOD - sOD).toFixed(2),
-      rid: (avgID - sID).toFixed(2),
-      rt: (avgT - sT).toFixed(2),
-      overallAvg: overallAvg.toFixed(2),
-      overallMargin: overallMargin.toFixed(2)
+      marginOD: sOD > 0 ? (avgOD - sOD).toFixed(2) : '0.00',
+      marginID: sID > 0 ? (avgID - sID).toFixed(2) : '0.00',
+      marginT: sT > 0 ? (avgT - sT).toFixed(2) : '0.00'
     };
   };
 
@@ -917,6 +948,17 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
           >
             <Settings className={`w-3.5 h-3.5 ${activeTab === 'entry' ? 'text-blue-600' : 'text-slate-400'}`} />
             데이터 입력
+          </button>
+          <button
+            onClick={() => setActiveTab('today')}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'today' 
+                ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10 ring-1 ring-slate-200' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+            }`}
+          >
+            <Calendar className={`w-3.5 h-3.5 ${activeTab === 'today' ? 'text-blue-600' : 'text-slate-400'}`} />
+            오늘 기록
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -965,6 +1007,71 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               </div>
             </div>
             <StatsDashboard records={allRecords} />
+          </motion.section>
+        ) : activeTab === 'today' ? (
+          <motion.section
+            key="today"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="bg-white border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden"
+          >
+            <div className="bg-slate-900 px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-5">
+                <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-500/20">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white tracking-tight font-serif italic">오늘의 작업 기록</h3>
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Today's Production Log</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 sm:p-10">
+              {(() => {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const todayRecords = allRecords.filter(r => r.workDate === todayStr);
+                
+                if (todayRecords.length === 0) {
+                  return (
+                    <div className="p-12 bg-slate-50 rounded-2xl text-slate-400 text-center flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200">
+                      <AlertCircle className="w-8 h-8 text-slate-300" />
+                      <p className="text-sm font-bold">오늘 기록된 작업이 없습니다.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm">
+                    <table className="w-full text-left border-collapse min-w-[800px]">
+                      <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">제조번호</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">S/N</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">규격</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">작업자</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">최종 측정 OD</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {todayRecords.map((record) => (
+                          <tr key={record.id} className="hover:bg-blue-50/50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-mono font-black text-slate-800">{record.manufacturingNo}</td>
+                            <td className="px-6 py-4 text-sm font-mono font-black text-slate-800">{record.sn}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-600">{record.size}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-600">{record.worker}</td>
+                            <td className="px-6 py-4 text-sm font-mono font-black text-blue-600">
+                              {record.measurements[record.measurements.length - 1]?.measuredOD || '-'} mm
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
           </motion.section>
         ) : activeTab === 'history' ? (
           <motion.section
@@ -1158,7 +1265,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
 
             <form onSubmit={handleSubmit} className="p-4 sm:p-10 space-y-8 sm:space-y-12 max-w-full overflow-x-hidden">
               {/* Summary Dashboard - Refined Bento Style */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl group transition-all duration-500 hover:border-blue-500/50">
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <Maximize className="w-12 h-12 text-blue-400" />
@@ -1185,27 +1292,14 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                   </div>
                 </div>
 
-                <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl group transition-all duration-500 hover:border-blue-500/50">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <TrendingUp className="w-12 h-12 text-blue-400" />
-                  </div>
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">전체 평균 (Overall Avg)</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-mono font-black text-blue-400 tracking-tighter">
-                      {averages.overallAvg}
-                    </span>
-                    <span className="text-slate-600 font-bold text-[9px] uppercase ml-1">mm</span>
-                  </div>
-                </div>
-
                 <div className="relative overflow-hidden p-6 bg-blue-600 rounded-[2rem] border border-blue-500 shadow-2xl group transition-all duration-500 hover:bg-blue-700">
                   <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
                     <CheckCircle2 className="w-12 h-12 text-white" />
                   </div>
                   <p className="text-[9px] font-black text-blue-200 uppercase tracking-[0.3em] mb-4">평균 여유치 (Avg Margin)</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-mono font-black text-white tracking-tighter">
-                      {averages.overallMargin}
+                    <span className="text-xl font-mono font-black text-white tracking-tighter">
+                      {averages.marginOD} <span className="text-blue-400">·</span> {averages.marginID} <span className="text-blue-400">·</span> {averages.marginT}
                     </span>
                     <span className="text-blue-200 font-bold text-[9px] uppercase ml-1">mm</span>
                   </div>
@@ -1475,6 +1569,7 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
                           onUpdate={handleMeasurementUpdate} 
                           onRemove={removeMeasurementRow} 
                           canRemove={formData.measurements.length > 2} 
+                          targetSize={formData.size}
                           errors={{
                             measuredOD: errors[`measurements.${m.round}.measuredOD`],
                             measuredID: errors[`measurements.${m.round}.measuredID`],
