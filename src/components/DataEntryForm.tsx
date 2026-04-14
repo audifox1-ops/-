@@ -608,6 +608,8 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
   // Search state
   const [searchMfgNo, setSearchMfgNo] = useState('');
   const [searchSN, setSearchSN] = useState('');
+  const [searchStartDate, setSearchStartDate] = useState('');
+  const [searchEndDate, setSearchEndDate] = useState('');
 
   // Auto-calculation logic
   useEffect(() => {
@@ -763,20 +765,29 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
   }, []);
 
   const handleSearch = useCallback(() => {
-    if (!searchMfgNo) {
+    if (!searchMfgNo && !searchSN && !searchStartDate && !searchEndDate) {
       setSearchResults([]);
       return;
     }
+    
+    const searchTerm = searchMfgNo.toLowerCase();
     const filtered = allRecords.filter(record => {
-      const mfgMatch = record.manufacturingNo.includes(searchMfgNo);
-      if (searchSN) {
-        const paddedSN = searchSN.padStart(3, '0');
-        return mfgMatch && record.sn === paddedSN;
+      const mfgMatch = !searchMfgNo || record.manufacturingNo.toLowerCase().includes(searchTerm);
+      const snMatch = !searchSN || record.sn === searchSN.padStart(3, '0');
+      
+      // Date range match
+      let dateMatch = true;
+      if (searchStartDate) {
+        dateMatch = dateMatch && record.workDate >= searchStartDate;
       }
-      return mfgMatch;
+      if (searchEndDate) {
+        dateMatch = dateMatch && record.workDate <= searchEndDate;
+      }
+      
+      return mfgMatch && snMatch && dateMatch;
     });
     setSearchResults(filtered);
-  }, [searchMfgNo, searchSN, allRecords]);
+  }, [searchMfgNo, searchSN, searchStartDate, searchEndDate, allRecords]);
 
   // Validation Logic
   const validateField = useCallback((name: string, value: any) => {
@@ -1099,22 +1110,57 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
               )}
             </div>
             <div className="p-4 sm:p-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-8 rounded-[1.5rem] border border-slate-200 mb-10 shadow-inner">
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Manufacturing Number</label>
-                  <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
-                    <input type="text" value={searchMfgNo} onChange={(e) => setSearchMfgNo(e.target.value)} placeholder="000000-00000-000" className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm font-bold shadow-sm" />
+              <div className="bg-slate-50 p-8 rounded-[1.5rem] border border-slate-200 mb-10 shadow-inner space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Manufacturing Number</label>
+                    <div className="relative group">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                      <input 
+                        type="text" 
+                        value={searchMfgNo} 
+                        onChange={(e) => setSearchMfgNo(e.target.value)} 
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        placeholder="제조번호 키워드 입력 (예: 1234)" 
+                        className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm font-bold shadow-sm" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Serial Number</label>
+                    <input 
+                      type="text" 
+                      value={searchSN} 
+                      onChange={(e) => setSearchSN(e.target.value)} 
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="001" 
+                      className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm font-bold text-center shadow-sm" 
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Serial Number</label>
-                  <div className="flex gap-3">
-                    <input type="text" value={searchSN} onChange={(e) => setSearchSN(e.target.value)} placeholder="001" className="flex-1 px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm font-bold text-center shadow-sm" />
-                    <button onClick={handleSearch} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-2 shadow-xl shadow-slate-200">
-                      Find
-                    </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Start Date</label>
+                    <input 
+                      type="date" 
+                      value={searchStartDate} 
+                      onChange={(e) => setSearchStartDate(e.target.value)} 
+                      className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all text-sm font-bold shadow-sm" 
+                    />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">End Date</label>
+                    <input 
+                      type="date" 
+                      value={searchEndDate} 
+                      onChange={(e) => setSearchEndDate(e.target.value)} 
+                      className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all text-sm font-bold shadow-sm" 
+                    />
+                  </div>
+                  <button onClick={handleSearch} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200 h-[54px]">
+                    <Search className="w-4 h-4" /> Search Records
+                  </button>
                 </div>
               </div>
 
