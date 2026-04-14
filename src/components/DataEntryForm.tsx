@@ -6,6 +6,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer, 
+  LineChart, 
+  Line,
+  Cell,
+  PieChart,
+  Pie
+} from 'recharts';
+import { 
   Save, 
   CheckCircle2, 
   AlertCircle, 
@@ -22,7 +37,10 @@ import {
   Table as TableIcon,
   Calculator,
   Thermometer,
-  Download
+  Download,
+  BarChart2,
+  TrendingUp,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 import { RingMillData, RingMillDataInput, MeasurementRecord } from '../types/RingMillData';
 
@@ -95,70 +113,57 @@ const MeasurementRow = React.memo(({
   canRemove: boolean;
 }) => {
   return (
-    <tr className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
-      <td className="py-3 px-4 text-center font-bold text-slate-500 text-sm bg-slate-50/50">
-        {record.round}차
-      </td>
-      <td className="py-3 px-2">
-        <input
-          type="number"
-          step="any"
-          value={record.measuredOD}
-          onChange={(e) => onUpdate(record.round, 'measuredOD', e.target.value)}
-          placeholder="OD"
-          className="w-full px-2 py-1.5 border border-slate-200 rounded text-center text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono"
-        />
-      </td>
-      <td className="py-3 px-2">
-        <input
-          type="number"
-          step="any"
-          value={record.measuredID}
-          onChange={(e) => onUpdate(record.round, 'measuredID', e.target.value)}
-          placeholder="ID"
-          className="w-full px-2 py-1.5 border border-slate-200 rounded text-center text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono"
-        />
-      </td>
-      <td className="py-3 px-2">
-        <input
-          type="number"
-          step="any"
-          value={record.measuredT}
-          onChange={(e) => onUpdate(record.round, 'measuredT', e.target.value)}
-          placeholder="T"
-          className="w-full px-2 py-1.5 border border-slate-200 rounded text-center text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono"
-        />
-      </td>
-      <td className="py-3 px-4">
-        <div className="flex flex-col items-center justify-center gap-1">
-          <div className="flex items-center gap-2 text-[11px] font-mono font-bold">
-            <span className={parseFloat(record.remainingOD) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingOD) > 0 ? 'text-blue-600' : 'text-slate-400'}>
-              {record.remainingOD}
-            </span>
-            <span className="text-slate-300">/</span>
-            <span className={parseFloat(record.remainingID) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingID) > 0 ? 'text-blue-600' : 'text-slate-400'}>
-              {record.remainingID}
-            </span>
-            <span className="text-slate-300">/</span>
-            <span className={parseFloat(record.remainingT) < 0 ? 'text-red-600 bg-red-50 px-1 rounded' : parseFloat(record.remainingT) > 0 ? 'text-blue-600' : 'text-slate-400'}>
-              {record.remainingT}
-            </span>
-          </div>
-          <div className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-            평균 여유치: {record.averageMargin}
-          </div>
+    <tr className="group hover:bg-slate-50 transition-all duration-300">
+      <td className="py-6 px-8 text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-500 font-black text-xs border border-slate-200 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all duration-300">
+          {record.round}
         </div>
       </td>
-      <td className="py-3 px-4 text-center">
-        <div className="text-sm font-mono font-bold text-slate-700">
-          {record.averageDimension}
+      <td className="py-6 px-4">
+        <div className="relative group/input">
+          <input 
+            type="number" 
+            step="any"
+            value={record.measuredOD} 
+            onChange={(e) => onUpdate(record.round, 'measuredOD', e.target.value)} 
+            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
+            placeholder="0.00"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">OD</div>
         </div>
       </td>
-      <td className="py-3 px-4 text-center">
-        <button
+      <td className="py-6 px-4">
+        <div className="relative group/input">
+          <input 
+            type="number" 
+            step="any"
+            value={record.measuredID} 
+            onChange={(e) => onUpdate(record.round, 'measuredID', e.target.value)} 
+            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
+            placeholder="0.00"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">ID</div>
+        </div>
+      </td>
+      <td className="py-6 px-4">
+        <div className="relative group/input">
+          <input 
+            type="number" 
+            step="any"
+            value={record.measuredT} 
+            onChange={(e) => onUpdate(record.round, 'measuredT', e.target.value)} 
+            className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-center font-mono text-sm font-black text-slate-700 outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
+            placeholder="0.00"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-300 uppercase tracking-widest pointer-events-none group-focus-within/input:text-blue-400">T</div>
+        </div>
+      </td>
+      <td className="py-6 px-8 text-center">
+        <button 
           type="button"
-          onClick={() => onRemove(record.round)}
-          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all group-hover:opacity-100"
+          onClick={() => onRemove(record.round)} 
+          disabled={!canRemove}
+          className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 disabled:opacity-0"
           title="기록 삭제"
         >
           <Trash2 className="w-4 h-4" />
@@ -190,12 +195,18 @@ const DimensionInput = React.memo(({
   isTarget?: boolean;
   max?: number;
 }) => (
-  <div className={`p-4 rounded-xl border transition-all ${highlight ? 'bg-slate-900 border-slate-800 shadow-inner' : 'bg-slate-50 border-slate-200'}`}>
-    <label className={`text-[10px] font-black uppercase tracking-widest mb-3 block ${highlight ? 'text-blue-400' : 'text-slate-500'}`}>
-      {label}
-    </label>
-    <div className="flex items-center gap-3">
-      <div className="flex-1 space-y-1">
+  <div className={`p-6 rounded-[2rem] border transition-all duration-500 ${highlight ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-200 shadow-sm hover:shadow-md'}`}>
+    <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center gap-3">
+        <div className={`w-1.5 h-1.5 rounded-full ${isHot ? 'bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]' : highlight ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-300'}`} />
+        <label className={`text-[10px] font-black uppercase tracking-[0.2em] ${highlight ? 'text-blue-400' : 'text-slate-400'}`}>
+          {label}
+        </label>
+      </div>
+      {isTarget && <span className="text-[8px] font-black text-blue-500/50 uppercase tracking-widest bg-blue-500/5 px-2 py-1 rounded-md">Reference</span>}
+    </div>
+    <div className="grid grid-cols-3 gap-3">
+      <div className="relative group/input">
         <input 
           type="number" 
           step={isTarget ? "0.01" : "any"}
@@ -206,12 +217,12 @@ const DimensionInput = React.memo(({
             if (max && parseFloat(val) > max) return;
             onChange('od', val);
           }} 
-          className={`w-full px-2 py-2 rounded-lg text-center font-mono text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`}
-          placeholder="OD"
+          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
+          placeholder="0.00"
         />
+        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>OD</span>
       </div>
-      <span className="text-slate-400 text-xs font-bold">x</span>
-      <div className="flex-1 space-y-1">
+      <div className="relative group/input">
         <input 
           type="number" 
           step={isTarget ? "0.01" : "any"}
@@ -222,12 +233,12 @@ const DimensionInput = React.memo(({
             if (max && parseFloat(val) > max) return;
             onChange('id', val);
           }} 
-          className={`w-full px-2 py-2 rounded-lg text-center font-mono text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`}
-          placeholder="ID"
+          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
+          placeholder="0.00"
         />
+        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>ID</span>
       </div>
-      <span className="text-slate-400 text-xs font-bold">x</span>
-      <div className="flex-1 space-y-1">
+      <div className="relative group/input">
         <input 
           type="number" 
           step={isTarget ? "0.01" : "any"}
@@ -238,18 +249,127 @@ const DimensionInput = React.memo(({
             if (max && parseFloat(val) > max) return;
             onChange('t', val);
           }} 
-          className={`w-full px-2 py-2 rounded-lg text-center font-mono text-sm outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'}`}
-          placeholder="T"
+          className={`w-full px-2 py-4 rounded-xl text-center font-mono text-sm font-black outline-none border transition-all ${highlight ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500 focus:ring-8 focus:ring-blue-500/10'}`}
+          placeholder="0.00"
         />
+        <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2.5 text-[7px] font-black px-1.5 py-0.5 rounded-full ${highlight ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>T</span>
       </div>
-      <span className={`text-[10px] font-bold ${highlight ? 'text-slate-500' : 'text-slate-400'}`}>mm</span>
     </div>
   </div>
 ));
 
 DimensionInput.displayName = 'DimensionInput';
 
+/**
+ * StatsDashboard Component
+ */
+const StatsDashboard = ({ records }: { records: RingMillData[] }) => {
+  if (!records || records.length === 0) {
+    return (
+      <div className="p-20 flex flex-col items-center justify-center text-slate-400 space-y-4">
+        <BarChart2 className="w-16 h-16 opacity-20" />
+        <p className="font-black uppercase tracking-widest text-xs">데이터가 없습니다. 먼저 데이터를 입력해 주세요.</p>
+      </div>
+    );
+  }
+
+  const materialStats = records.reduce((acc: any, curr) => {
+    acc[curr.material] = (acc[curr.material] || 0) + 1;
+    return acc;
+  }, {});
+
+  const materialData = Object.keys(materialStats).map(key => ({
+    name: key,
+    value: materialStats[key]
+  }));
+
+  const timelineData = records.slice(-10).map(r => ({
+    date: r.workDate,
+    od: parseFloat(r.measurements[r.measurements.length - 1]?.measuredOD || '0'),
+    id: parseFloat(r.measurements[r.measurements.length - 1]?.measuredID || '0'),
+    t: parseFloat(r.measurements[r.measurements.length - 1]?.measuredT || '0'),
+  }));
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+  return (
+    <div className="space-y-8 p-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+            <PieChartIcon className="w-5 h-5 text-blue-500" /> 재질별 분포
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={materialData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {materialData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-green-500" /> 최근 측정 추세 (최종 OD)
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timelineData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="od" stroke="#3b82f6" strokeWidth={3} name="OD" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="id" stroke="#10b981" strokeWidth={3} name="ID" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="t" stroke="#f59e0b" strokeWidth={3} name="T" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+          <BarChart2 className="w-5 h-5 text-orange-500" /> 작업자별 생산량
+        </h3>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={records.reduce((acc: any[], curr) => {
+              const worker = acc.find(a => a.name === curr.worker);
+              if (worker) worker.count++;
+              else acc.push({ name: curr.worker, count: 1 });
+              return acc;
+            }, [])}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3b82f6" name="생산량" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps) {
+  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'stats'>('entry');
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [isSaved, setIsSaved] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
@@ -501,349 +621,646 @@ export default function DataEntryForm({ onSave, allRecords }: DataEntryFormProps
     }
   };
 
-  return (
-    <div className="space-y-8 pb-20">
-      {/* Search Section */}
-      <section className="bg-white border border-slate-200 shadow-sm rounded-lg overflow-hidden">
-        <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex items-center gap-2">
-          <Search className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">기록 조회</h3>
-        </div>
-        <div className="p-6">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex-1 min-w-[200px] space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">제조번호</label>
-              <input type="text" value={searchMfgNo} onChange={(e) => setSearchMfgNo(e.target.value)} placeholder="000000-00000-000" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono" />
-            </div>
-            <div className="w-24 space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">S/N</label>
-              <input type="text" value={searchSN} onChange={(e) => setSearchSN(e.target.value)} placeholder="001" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono" />
-            </div>
-            <button onClick={handleSearch} className="bg-slate-800 text-white px-6 py-2 rounded font-bold hover:bg-slate-700 transition-all flex items-center gap-2 shadow-sm">
-              <Search className="w-4 h-4" /> 조회
-            </button>
-          </div>
-          <AnimatePresence>
-            {searchResults !== null && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-6 border-t border-slate-100 pt-6">
-                {searchResults.length === 0 ? (
-                  <div className="p-4 bg-slate-50 rounded-lg text-slate-500 text-center text-sm flex items-center justify-center gap-2">
-                    <AlertCircle className="w-4 h-4" /> 일치하는 기록이 없습니다.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                        <Info className="w-4 h-4 text-blue-500" /> 조회 결과 ({searchResults.length}건)
-                      </h4>
-                      <button 
-                        onClick={handleExportCSV}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-md text-xs font-bold hover:bg-green-100 transition-all"
-                      >
-                        <Download className="w-3 h-3" /> CSV 내보내기
-                      </button>
-                    </div>
-                    <button onClick={() => setSearchResults(null)} className="text-xs text-slate-400 hover:text-slate-600">닫기</button>
-                    {searchSN && searchResults.length === 1 ? (
-                      // Single Record Full Details
-                      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">제조번호 / S/N</p>
-                          <p className="text-sm font-mono font-bold text-slate-700">{searchResults[0].manufacturingNo} / {searchResults[0].sn}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">규격 (SIZE)</p>
-                          <p className="text-sm font-bold text-slate-700">{searchResults[0].size}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">열처리 / 재질</p>
-                          <p className="text-sm font-bold text-slate-700">{searchResults[0].heatTreatmentType} / {searchResults[0].material}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">작업자 / 일자</p>
-                          <p className="text-sm font-bold text-slate-700">{searchResults[0].worker} ({searchResults[0].workDate})</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">목표 냉간치수</p>
-                          <p className="text-sm font-mono font-bold text-blue-600">{searchResults[0].coldDimension}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">목표 열간치수</p>
-                          <p className="text-sm font-mono font-bold text-orange-600">{searchResults[0].hotDimension}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">여유치</p>
-                          <p className="text-sm font-bold text-slate-600">{searchResults[0].margin}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">실적용여유치</p>
-                          <p className="text-sm font-bold text-slate-600">{searchResults[0].appliedMargin}</p>
-                        </div>
-                        <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-200">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">최근 측정 기록 ({searchResults[0].measurements.length}회차)</p>
-                          <div className="flex gap-4">
-                            <div className="bg-white px-3 py-2 rounded border border-slate-200">
-                              <span className="text-[10px] text-slate-400 block">측정 OD</span>
-                              <span className="text-sm font-mono font-bold text-slate-700">{searchResults[0].measurements[searchResults[0].measurements.length - 1]?.measuredOD || '-'}</span>
-                            </div>
-                            <div className="bg-white px-3 py-2 rounded border border-slate-200">
-                              <span className="text-[10px] text-slate-400 block">측정 ID</span>
-                              <span className="text-sm font-mono font-bold text-slate-700">{searchResults[0].measurements[searchResults[0].measurements.length - 1]?.measuredID || '-'}</span>
-                            </div>
-                            <div className="bg-white px-3 py-2 rounded border border-slate-200">
-                              <span className="text-[10px] text-slate-400 block">측정 T</span>
-                              <span className="text-sm font-mono font-bold text-slate-700">{searchResults[0].measurements[searchResults[0].measurements.length - 1]?.measuredT || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      // List of Matching SNs
-                      <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                        <table className="w-full text-left border-collapse min-w-[600px]">
-                          <thead className="bg-slate-50">
-                            <tr>
-                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">S/N</th>
-                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">규격</th>
-                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">작업자</th>
-                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">최종 측정 OD</th>
-                              <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">일자</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {searchResults.map((record) => (
-                              <tr key={record.id} className="hover:bg-blue-50/50 transition-colors">
-                                <td className="px-4 py-2 text-sm font-mono font-bold text-slate-700">{record.sn}</td>
-                                <td className="px-4 py-2 text-xs text-slate-600">{record.size}</td>
-                                <td className="px-4 py-2 text-xs text-slate-600">{record.worker}</td>
-                                <td className="px-4 py-2 text-sm font-mono font-bold text-blue-600">
-                                  {record.measurements[record.measurements.length - 1]?.measuredOD || '-'} mm
-                                </td>
-                                <td className="px-4 py-2 text-xs text-slate-500">{record.workDate}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </section>
+  const getAverages = () => {
+    const validMeasurements = formData.measurements.filter(m => m.measuredOD || m.measuredID || m.measuredT);
+    const count = validMeasurements.length || 1;
+    
+    const sumOD = validMeasurements.reduce((acc, m) => acc + (parseFloat(m.measuredOD) || 0), 0);
+    const sumID = validMeasurements.reduce((acc, m) => acc + (parseFloat(m.measuredID) || 0), 0);
+    const sumT = validMeasurements.reduce((acc, m) => acc + (parseFloat(m.measuredT) || 0), 0);
+    
+    const avgOD = sumOD / count;
+    const avgID = sumID / count;
+    const avgT = sumT / count;
 
-      {/* Main Entry Form */}
-      <div className="w-full bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden">
-        <div className="bg-slate-900 px-8 py-6 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
-              <Settings className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-white font-sans font-black text-xl tracking-tight">냉간치수 측정 기록 시스템</h2>
-              <p className="text-slate-400 text-xs font-medium mt-0.5">Ring Mill Forging Measurement System v3.0</p>
-            </div>
-          </div>
-          <button onClick={() => setFormData(initialFormState)} className="text-slate-400 hover:text-white transition-all flex items-center gap-2 text-sm font-bold bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-            <RefreshCcw className="w-4 h-4" /> 초기화
+    const sOD = parseFloat(formData.size.od) || 0;
+    const sID = parseFloat(formData.size.id) || 0;
+    const sT = parseFloat(formData.size.t) || 0;
+
+    const overallAvg = (avgOD + avgID + avgT) / 3;
+    const sizeAvg = (sOD + sID + sT) / 3;
+    const overallMargin = overallAvg - sizeAvg;
+
+    return {
+      od: avgOD.toFixed(2),
+      id: avgID.toFixed(2),
+      t: avgT.toFixed(2),
+      rod: (avgOD - sOD).toFixed(2),
+      rid: (avgID - sID).toFixed(2),
+      rt: (avgT - sT).toFixed(2),
+      overallAvg: overallAvg.toFixed(2),
+      overallMargin: overallMargin.toFixed(2)
+    };
+  };
+
+  const averages = getAverages();
+
+  return (
+    <div className="space-y-8 pb-20 max-w-7xl mx-auto px-4 sm:px-6">
+      {/* Tab Navigation - Refined Technical Style */}
+      <div className="flex items-center justify-center pt-4">
+        <div className="flex p-1 bg-slate-200/50 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-inner">
+          <button
+            onClick={() => setActiveTab('entry')}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'entry' 
+                ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10 ring-1 ring-slate-200' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+            }`}
+          >
+            <Settings className={`w-3.5 h-3.5 ${activeTab === 'entry' ? 'text-blue-600' : 'text-slate-400'}`} />
+            데이터 입력
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'history' 
+                ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10 ring-1 ring-slate-200' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+            }`}
+          >
+            <Search className={`w-3.5 h-3.5 ${activeTab === 'history' ? 'text-blue-600' : 'text-slate-400'}`} />
+            이력 조회
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'stats' 
+                ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10 ring-1 ring-slate-200' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+            }`}
+          >
+            <BarChart2 className={`w-3.5 h-3.5 ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-400'}`} />
+            통계 분석
           </button>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-12">
-          {/* Section 1: Basic Info */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-4 border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full" /> 기본 정보
-              </h3>
+      <AnimatePresence mode="wait">
+        {activeTab === 'stats' ? (
+          <motion.section
+            key="stats"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="bg-white border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden"
+          >
+            <div className="bg-slate-900 px-10 py-8 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                <div className="bg-orange-600 p-3 rounded-2xl shadow-xl shadow-orange-500/20">
+                  <BarChart2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white tracking-tight font-serif italic">통계 분석 및 추세</h3>
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Production Insights & Trends</p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><Hash className="w-3.5 h-3.5" /> 제조번호</label>
-              <input type="text" value={formData.manufacturingNo} onChange={handleMfgNoChange} className={`w-full px-4 py-2.5 bg-slate-50 border ${errors.manufacturingNo ? 'border-red-500' : 'border-slate-200'} rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono text-sm font-bold`} placeholder="000000-00000-000" />
+            <StatsDashboard records={allRecords} />
+          </motion.section>
+        ) : activeTab === 'history' ? (
+          <motion.section
+            key="history"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="bg-white border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden"
+          >
+            <div className="bg-slate-900 px-10 py-8 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-500/20">
+                  <Search className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white tracking-tight font-serif italic">이력 조회 및 검색</h3>
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Manufacturing Database v3.0</p>
+                </div>
+              </div>
+              {searchResults && (
+                <button onClick={() => setSearchResults(null)} className="text-[10px] font-black text-slate-400 hover:text-white flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 transition-all uppercase tracking-widest">
+                  <RefreshCcw className="w-3.5 h-3.5" /> Reset Results
+                </button>
+              )}
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase">S/N</label>
-              <input type="number" name="sn" value={formData.sn} onChange={handleChange} onBlur={handleSNBlur} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono text-sm font-bold" placeholder="001" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase">재질</label>
-              <input type="text" name="material" value={formData.material} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold" placeholder="SUS304" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase">열처리 종류</label>
-              <select name="heatTreatmentType" value={formData.heatTreatmentType} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold">
-                <option value="">선택</option>
-                <option value="QT">QT</option>
-                <option value="N">N</option>
-                <option value="S/A">S/A</option>
-                <option value="기타">기타</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Section 2: Target Dimensions & Margins */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="space-y-6">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
-                <Maximize className="w-4 h-4" /> 수주치수 및 여유치
-              </h3>
-              <div className="space-y-4">
+            <div className="p-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-8 rounded-[1.5rem] border border-slate-200 mb-10 shadow-inner">
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Manufacturing Number</label>
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                    <input type="text" value={searchMfgNo} onChange={(e) => setSearchMfgNo(e.target.value)} placeholder="000000-00000-000" className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm font-bold shadow-sm" />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <DimensionInput label="수주치수 (Target SIZE)" data={formData.size} onChange={(f, v) => handleCategoryChange('size', f, v)} isTarget max={12000} />
-                </div>
-                <DimensionInput label="여유치 (Margin)" data={formData.margin} onChange={(f, v) => handleCategoryChange('margin', f, v)} />
-                <DimensionInput label="실작업 여유치 (Applied Margin)" data={formData.appliedMargin} onChange={(f, v) => handleCategoryChange('appliedMargin', f, v)} />
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-orange-600 flex items-center gap-2">
-                <Calculator className="w-4 h-4" /> 자동 계산 목표치
-              </h3>
-              <div className="space-y-4">
-                <div className="p-4 bg-slate-100 rounded-xl border border-slate-200 grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                      <Calculator className="w-3.5 h-3.5" /> 설정된 열팽창계수
-                    </label>
-                    <div className="flex gap-2">
-                      <input type="number" name="thermalExpansionCoefficient" step="any" value={formData.thermalExpansionCoefficient} onChange={handleChange} className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-lg font-mono text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" />
-                      <button type="button" onClick={applyThermalExpansion} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2">
-                        <RefreshCcw className="w-3 h-3" /> 적용
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2 pt-2 border-t border-slate-200">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 flex items-center gap-2">
-                      <Thermometer className="w-3.5 h-3.5" /> 적용된 열팽창계수 (계산 반영 중)
-                    </label>
-                    <div className="w-full px-4 py-2 bg-blue-50 border border-blue-100 rounded-lg font-mono text-sm font-bold text-blue-700 flex justify-between items-center">
-                      <span>{formData.appliedThermalExpansionCoefficient}</span>
-                      {formData.thermalExpansionCoefficient !== formData.appliedThermalExpansionCoefficient && (
-                        <span className="text-[9px] text-red-500 animate-pulse font-black">미적용 상태</span>
-                      )}
-                    </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Serial Number</label>
+                  <div className="flex gap-3">
+                    <input type="text" value={searchSN} onChange={(e) => setSearchSN(e.target.value)} placeholder="001" className="flex-1 px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm font-bold text-center shadow-sm" />
+                    <button onClick={handleSearch} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-2 shadow-xl shadow-slate-200">
+                      Find
+                    </button>
                   </div>
                 </div>
-                <DimensionInput label="목표 냉간치수 (Target Cold Dimension)" data={formData.coldDimension} onChange={(f, v) => handleCategoryChange('coldDimension', f, v)} highlight />
-                <DimensionInput label="목표 열간치수 (Target Hot Dimension)" data={formData.hotDimension} onChange={(f, v) => handleCategoryChange('hotDimension', f, v)} highlight isHot />
               </div>
-            </div>
 
-            {/* Summary Dashboard */}
-            <div className="lg:col-span-2 p-8 bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl flex flex-wrap gap-12 justify-around items-center">
-              <div className="text-center space-y-3">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">수주 평균 치수</p>
-                <div className="flex items-baseline gap-2 justify-center">
-                  <span className="text-4xl font-mono font-black text-blue-400">
-                    {(( (parseFloat(formData.size.od) || 0) + (parseFloat(formData.size.id) || 0) + (parseFloat(formData.size.t) || 0) ) / 
-                      ([formData.size.od, formData.size.id, formData.size.t].filter(v => v !== '').length || 1)).toFixed(2)}
-                  </span>
-                  <span className="text-slate-500 font-bold text-sm">mm</span>
+              <AnimatePresence>
+                {searchResults !== null && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-6">
+                    {searchResults.length === 0 ? (
+                      <div className="p-12 bg-slate-50 rounded-2xl text-slate-400 text-center flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200">
+                        <AlertCircle className="w-8 h-8 text-slate-300" />
+                        <p className="text-sm font-bold">일치하는 기록을 찾을 수 없습니다.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                            <Info className="w-5 h-5 text-blue-500" /> 검색 결과 <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs">{searchResults.length}건</span>
+                          </h4>
+                          <button 
+                            onClick={handleExportCSV}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-xs font-black hover:bg-green-700 transition-all shadow-lg shadow-green-500/20"
+                          >
+                            <Download className="w-3.5 h-3.5" /> CSV 내보내기
+                          </button>
+                        </div>
+                        
+                        {searchSN && searchResults.length === 1 ? (
+                          <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm space-y-8">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">제조번호 / S/N</p>
+                                <p className="text-sm font-mono font-black text-slate-800">{searchResults[0].manufacturingNo} / {searchResults[0].sn}</p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">규격 (SIZE)</p>
+                                <p className="text-sm font-black text-slate-800">{searchResults[0].size}</p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">열처리 / 재질</p>
+                                <p className="text-sm font-black text-slate-800">{searchResults[0].heatTreatmentType} / {searchResults[0].material}</p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">작업자 / 일자</p>
+                                <p className="text-sm font-black text-slate-800">{searchResults[0].worker} ({searchResults[0].workDate})</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">목표 냉간치수</p>
+                                <p className="text-lg font-mono font-black text-blue-700">{searchResults[0].coldDimension}</p>
+                              </div>
+                              <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">목표 열간치수</p>
+                                <p className="text-lg font-mono font-black text-orange-700">{searchResults[0].hotDimension}</p>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">적용 여유치</p>
+                                <p className="text-lg font-mono font-black text-slate-700">{searchResults[0].appliedMargin}</p>
+                              </div>
+                            </div>
+
+                            <div className="pt-6 border-t border-slate-100">
+                              <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <TableIcon className="w-4 h-4 text-slate-400" /> 상세 측정 이력 ({searchResults[0].measurements.length}회차)
+                              </p>
+                              <div className="overflow-hidden border border-slate-200 rounded-xl">
+                                <table className="w-full text-left border-collapse">
+                                  <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                      <th className="px-6 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">회차</th>
+                                      <th className="px-6 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 OD</th>
+                                      <th className="px-6 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 ID</th>
+                                      <th className="px-6 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 T</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {searchResults[0].measurements.map((m) => (
+                                      <tr key={m.round} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-3 text-sm font-black text-slate-400 text-center">{m.round}차</td>
+                                        <td className="px-6 py-3 text-sm font-mono font-black text-slate-700 text-center">{m.measuredOD}</td>
+                                        <td className="px-6 py-3 text-sm font-mono font-black text-slate-700 text-center">{m.measuredID}</td>
+                                        <td className="px-6 py-3 text-sm font-mono font-black text-slate-700 text-center">{m.measuredT}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                              <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">S/N</th>
+                                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">규격</th>
+                                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">작업자</th>
+                                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">최종 측정 OD</th>
+                                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">일자</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 bg-white">
+                                {searchResults.map((record) => (
+                                  <tr key={record.id} className="hover:bg-blue-50/50 transition-colors cursor-pointer group">
+                                    <td className="px-6 py-4 text-sm font-mono font-black text-slate-800">{record.sn}</td>
+                                    <td className="px-6 py-4 text-xs font-bold text-slate-600">{record.size}</td>
+                                    <td className="px-6 py-4 text-xs font-bold text-slate-600">{record.worker}</td>
+                                    <td className="px-6 py-4 text-sm font-mono font-black text-blue-600 group-hover:scale-105 transition-transform origin-left">
+                                      {record.measurements[record.measurements.length - 1]?.measuredOD || '-'} mm
+                                    </td>
+                                    <td className="px-6 py-4 text-xs font-bold text-slate-400">{record.workDate}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.section>
+        ) : (
+          <motion.div
+            key="entry"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="w-full bg-white border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden"
+          >
+            <div className="bg-slate-900 px-10 py-8 flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-5">
+                <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-500/20">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-white font-serif italic text-2xl tracking-tight">Cold Dimension Recording</h2>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Ring Mill Forging System v3.0</p>
                 </div>
               </div>
-              <div className="w-px h-12 bg-slate-800 hidden md:block" />
-              <div className="text-center space-y-3">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">전체 평균 여유치</p>
-                <div className="flex items-baseline gap-2 justify-center">
-                  <span className="text-4xl font-mono font-black text-green-400">
-                    {(formData.measurements.reduce((acc, m) => acc + parseFloat(m.averageMargin), 0) / formData.measurements.length).toFixed(2)}
-                  </span>
-                  <span className="text-slate-500 font-bold text-sm">mm</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Measurement Log */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
-                <TableIcon className="w-4 h-4" /> 냉간치수 측정 기록부
-              </h3>
-              <button type="button" onClick={addMeasurementRow} disabled={formData.measurements.length >= 8} className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition-all disabled:opacity-50">
-                <Plus className="w-4 h-4" /> 측정 기록 추가
+              <button onClick={() => setFormData(initialFormState)} className="text-[10px] font-black text-slate-400 hover:text-white transition-all flex items-center gap-2 bg-slate-800 px-5 py-2.5 rounded-xl border border-slate-700 uppercase tracking-widest">
+                <RefreshCcw className="w-4 h-4" /> Reset Form
               </button>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
-              <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-20">회차</th>
-                    <th className="py-4 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 OD (mm)</th>
-                    <th className="py-4 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 ID (mm)</th>
-                    <th className="py-4 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">측정 T (mm)</th>
-                    <th className="py-4 px-4 text-[10px] font-black text-blue-600 uppercase tracking-widest text-center bg-blue-50/30">남은 여유치 (OD/ID/T)</th>
-                    <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">평균치수</th>
-                    <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-16">관리</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {formData.measurements.map((m) => (
-                    <MeasurementRow key={m.round} record={m} onUpdate={handleMeasurementUpdate} onRemove={removeMeasurementRow} canRemove={formData.measurements.length > 2} />
-                  ))}
-                </tbody>
-                <tfoot className="bg-slate-900 text-white border-t-2 border-slate-800">
-                  <tr>
-                    <td className="py-4 px-4 text-center text-[10px] font-black uppercase tracking-widest">종합 평균</td>
-                    <td colSpan={3} className="py-4 px-4 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs font-bold text-slate-400 uppercase">전체 평균 치수</span>
-                        <span className="text-lg font-mono font-black text-blue-400">
-                          {(formData.measurements.reduce((acc, m) => acc + parseFloat(m.averageDimension), 0) / formData.measurements.length).toFixed(2)} mm
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs font-bold text-slate-400 uppercase">전체 평균 여유치</span>
-                        <span className="text-lg font-mono font-black text-green-400">
-                          {(formData.measurements.reduce((acc, m) => acc + parseFloat(m.averageMargin), 0) / formData.measurements.length).toFixed(2)} mm
-                        </span>
-                      </div>
-                    </td>
-                    <td className="bg-slate-800"></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
 
-          {/* Section 4: Worker & Submit */}
-          <div className="pt-10 border-t border-slate-100 flex flex-col md:flex-row items-end justify-between gap-8">
-            <div className="flex flex-wrap gap-6 w-full md:w-auto">
-              <div className="space-y-1.5 min-w-[200px]">
-                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><User className="w-3.5 h-3.5" /> 작업자</label>
-                <input type="text" name="worker" value={formData.worker} onChange={handleChange} className={`w-full px-4 py-3 bg-slate-50 border ${errors.worker ? 'border-red-500' : 'border-slate-200'} rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold`} placeholder="성명 입력" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> 작업일자 / 조</label>
-                <div className="flex gap-2">
-                  <input type="date" name="workDate" value={formData.workDate} onChange={handleChange} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold" />
-                  <select name="shift" value={formData.shift} onChange={handleChange} className="w-24 px-2 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold">
-                    <option value="Day">주간</option>
-                    <option value="Night">야간</option>
-                  </select>
+            <form onSubmit={handleSubmit} className="p-10 space-y-12">
+              {/* Summary Dashboard - Refined Bento Style */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl group transition-all duration-500 hover:border-blue-500/50">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Maximize className="w-12 h-12 text-blue-400" />
+                  </div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">목표 규격 (Target Specs)</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-mono font-black text-white tracking-tighter">
+                      {formData.size.od || '0'} <span className="text-slate-600">×</span> {formData.size.id || '0'} <span className="text-slate-600">×</span> {formData.size.t || '0'}
+                    </span>
+                    <span className="text-slate-600 font-bold text-[9px] uppercase">mm</span>
+                  </div>
+                </div>
+
+                <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl group transition-all duration-500 hover:border-blue-500/50">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Calculator className="w-12 h-12 text-blue-400" />
+                  </div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">측정 평균 (Measured Avg)</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-mono font-black text-blue-400 tracking-tighter">
+                      {averages.od} <span className="text-slate-800">·</span> {averages.id} <span className="text-slate-800">·</span> {averages.t}
+                    </span>
+                    <span className="text-slate-600 font-bold text-[9px] uppercase">mm</span>
+                  </div>
+                </div>
+
+                <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl group transition-all duration-500 hover:border-blue-500/50">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <TrendingUp className="w-12 h-12 text-blue-400" />
+                  </div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">전체 평균 (Overall Avg)</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-mono font-black text-blue-400 tracking-tighter">
+                      {averages.overallAvg}
+                    </span>
+                    <span className="text-slate-600 font-bold text-[9px] uppercase ml-1">mm</span>
+                  </div>
+                </div>
+
+                <div className="relative overflow-hidden p-6 bg-blue-600 rounded-[2rem] border border-blue-500 shadow-2xl group transition-all duration-500 hover:bg-blue-700">
+                  <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
+                    <CheckCircle2 className="w-12 h-12 text-white" />
+                  </div>
+                  <p className="text-[9px] font-black text-blue-200 uppercase tracking-[0.3em] mb-4">평균 여유치 (Avg Margin)</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-mono font-black text-white tracking-tighter">
+                      {averages.overallMargin}
+                    </span>
+                    <span className="text-blue-200 font-bold text-[9px] uppercase ml-1">mm</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <button type="submit" disabled={isSaved} className={`w-full md:w-64 py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all shadow-xl ${isSaved ? 'bg-green-500 text-white shadow-green-500/20' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-blue-600/30'}`}>
-              {isSaved ? <><CheckCircle2 className="w-7 h-7" /> 저장 완료</> : <><Save className="w-7 h-7" /> 최종 데이터 저장</>}
-            </button>
-          </div>
-        </form>
 
-        <AnimatePresence>
-          {Object.keys(errors).length > 0 && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-red-50 px-8 py-5 border-t border-red-100 flex items-center gap-4 text-red-600 text-sm font-black">
-              <AlertCircle className="w-6 h-6" /> 
-              <span>필수 입력 항목을 확인해 주세요. ({Object.values(errors).join(', ')})</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              {/* Section 1: Basic Info - Structured Grid */}
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600" />
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="bg-blue-50 p-3 rounded-2xl">
+                    <Info className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">기본 설정 (Primary Configuration)</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">프로젝트 및 자재 사양</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Hash className="w-3.5 h-3.5 text-blue-500" /> 제조 번호 (Mfg No.)
+                    </label>
+                    <input 
+                      type="text" 
+                      value={formData.manufacturingNo} 
+                      onChange={handleMfgNoChange} 
+                      className={`w-full px-5 py-4 bg-slate-50 border ${errors.manufacturingNo ? 'border-red-500' : 'border-slate-100'} rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all font-mono text-sm font-bold shadow-inner`} 
+                      placeholder="000000-00000-000" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Settings className="w-3.5 h-3.5 text-blue-500" /> 일련 번호 (S/N)
+                    </label>
+                    <input 
+                      type="number" 
+                      name="sn" 
+                      value={formData.sn} 
+                      onChange={handleChange} 
+                      onBlur={handleSNBlur} 
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all font-mono text-sm font-bold shadow-inner" 
+                      placeholder="001" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <TableIcon className="w-3.5 h-3.5 text-blue-500" /> 재질 (Material)
+                    </label>
+                    <input 
+                      type="text" 
+                      name="material" 
+                      value={formData.material} 
+                      onChange={handleChange} 
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-bold shadow-inner" 
+                      placeholder="SUS304" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <RefreshCcw className="w-3.5 h-3.5 text-blue-500" /> 열처리 (Heat Treatment)
+                    </label>
+                    <div className="relative">
+                      <select 
+                        name="heatTreatmentType" 
+                        value={formData.heatTreatmentType} 
+                        onChange={handleChange} 
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-bold shadow-inner appearance-none"
+                      >
+                        <option value="">유형 선택</option>
+                        <option value="QT">QT</option>
+                        <option value="N">N</option>
+                        <option value="S/A">S/A</option>
+                        <option value="기타">기타 (Other)</option>
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <Plus className="w-4 h-4 rotate-45" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Target Dimensions & Margins */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-50 p-3 rounded-2xl">
+                      <Maximize className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">목표 사양 (Target Specifications)</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">필수 치수 및 여유치 설정</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <DimensionInput label="목표 치수 (수주치수)" data={formData.size} onChange={(f, v) => handleCategoryChange('size', f, v)} isTarget max={12000} />
+                      {(formData.size.od || formData.size.id || formData.size.t) && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-6 py-4 bg-slate-900 rounded-2xl flex justify-between items-center shadow-2xl border border-slate-800">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">규격 형식 (Formatted Spec)</span>
+                          <span className="text-lg font-mono font-black text-blue-400">
+                            {formData.size.od || '0'} <span className="text-slate-700">×</span> {formData.size.id || '0'} <span className="text-slate-700">×</span> {formData.size.t || '0'} <span className="text-[10px] text-slate-600 ml-1">mm</span>
+                          </span>
+                        </motion.div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <DimensionInput label="표준 여유치 (Standard Margin)" data={formData.margin} onChange={(f, v) => handleCategoryChange('margin', f, v)} />
+                      <DimensionInput label="실작업 여유치 (Applied Work Margin)" data={formData.appliedMargin} onChange={(f, v) => handleCategoryChange('appliedMargin', f, v)} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-orange-50 p-3 rounded-2xl">
+                      <Calculator className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">계산된 목표치 (Computed Targets)</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">자동 계산 결과</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner space-y-8">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                          <Thermometer className="w-4 h-4 text-orange-500" /> 열팽창 계수 (Expansion Coefficient)
+                        </label>
+                        <div className="flex gap-4">
+                          <input type="number" name="thermalExpansionCoefficient" step="any" value={formData.thermalExpansionCoefficient} onChange={handleChange} className="flex-1 px-5 py-4 bg-white border border-slate-200 rounded-2xl font-mono text-sm font-bold outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-500 transition-all shadow-sm" />
+                          <button type="button" onClick={applyThermalExpansion} className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">
+                            적용 (Apply)
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-4 pt-6 border-t border-slate-200">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">
+                          적용된 계수 (Active Coefficient)
+                        </label>
+                        <div className="w-full px-6 py-4 bg-blue-600 rounded-2xl font-mono text-lg font-black text-white flex justify-between items-center shadow-2xl shadow-blue-500/30">
+                          <span>{formData.appliedThermalExpansionCoefficient}</span>
+                          {formData.thermalExpansionCoefficient !== formData.appliedThermalExpansionCoefficient && (
+                            <span className="text-[9px] bg-red-500 text-white px-3 py-1.5 rounded-full animate-pulse tracking-widest uppercase">대기중 (Pending)</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <DimensionInput label="목표 냉간 치수 (Target Cold)" data={formData.coldDimension} onChange={(f, v) => handleCategoryChange('coldDimension', f, v)} highlight />
+                      <DimensionInput label="목표 열간 치수 (Target Hot)" data={formData.hotDimension} onChange={(f, v) => handleCategoryChange('hotDimension', f, v)} highlight isHot />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Measurement Log - Refined Table */}
+              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-50 p-3 rounded-2xl">
+                      <TableIcon className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">측정 기록 (Measurement Log)</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">실시간 데이터 수집</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={addMeasurementRow} disabled={formData.measurements.length >= 8} className="flex items-center gap-3 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 shadow-2xl shadow-blue-500/30 active:scale-95">
+                    <Plus className="w-4 h-4" /> 회차 추가 (Add Round)
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded-[2rem] border border-slate-200 shadow-2xl">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead className="bg-slate-900 border-b border-slate-800">
+                      <tr>
+                        <th className="py-6 px-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center w-32">회차 (Round)</th>
+                        <th className="py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">측정 OD (mm)</th>
+                        <th className="py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">측정 ID (mm)</th>
+                        <th className="py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">측정 T (mm)</th>
+                        <th className="py-6 px-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center w-24">작업 (Actions)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {formData.measurements.map((m) => (
+                        <MeasurementRow key={m.round} record={m} onUpdate={handleMeasurementUpdate} onRemove={removeMeasurementRow} canRemove={formData.measurements.length > 2} />
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-slate-900 text-white border-t border-slate-800">
+                      <tr>
+                        <td className="py-8 px-8 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">종합 평균 (Aggregate Avg)</td>
+                        <td className="py-8 px-4 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="font-mono font-black text-blue-400 text-2xl">{averages.od}</span>
+                            <span className="text-[8px] text-slate-600 uppercase tracking-widest mt-1">평균 OD</span>
+                          </div>
+                        </td>
+                        <td className="py-8 px-4 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="font-mono font-black text-blue-400 text-2xl">{averages.id}</span>
+                            <span className="text-[8px] text-slate-600 uppercase tracking-widest mt-1">평균 ID</span>
+                          </div>
+                        </td>
+                        <td className="py-8 px-4 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="font-mono font-black text-blue-400 text-2xl">{averages.t}</span>
+                            <span className="text-[8px] text-slate-600 uppercase tracking-widest mt-1">평균 T</span>
+                          </div>
+                        </td>
+                        <td className="bg-slate-800/50"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 4: Worker & Submit - Refined Footer */}
+              <div className="bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full lg:w-auto">
+                  <div className="space-y-3 min-w-[280px]">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-500" /> 작업자 정보 (Operator Identity)
+                    </label>
+                    <input 
+                      type="text" 
+                      name="worker" 
+                      value={formData.worker} 
+                      onChange={handleChange} 
+                      className={`w-full px-6 py-4 bg-slate-800 border ${errors.worker ? 'border-red-500' : 'border-slate-700'} rounded-2xl focus:ring-8 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-bold text-white shadow-inner placeholder:text-slate-600`} 
+                      placeholder="작업자 성명을 입력하세요" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-blue-500" /> 일정 및 교대 (Schedule & Shift)
+                    </label>
+                    <div className="flex gap-3">
+                      <input 
+                        type="date" 
+                        name="workDate" 
+                        value={formData.workDate} 
+                        onChange={handleChange} 
+                        className="flex-1 px-6 py-4 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-8 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-bold text-white shadow-inner" 
+                      />
+                      <select 
+                        name="shift" 
+                        value={formData.shift} 
+                        onChange={handleChange} 
+                        className="w-32 px-4 py-4 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-8 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-bold text-white shadow-inner appearance-none"
+                      >
+                        <option value="Day">주간 (Day)</option>
+                        <option value="Night">야간 (Night)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isSaved} 
+                  className={`w-full lg:w-80 py-8 rounded-[2rem] font-black text-xl uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all shadow-2xl active:scale-[0.98] ${
+                    isSaved 
+                      ? 'bg-green-500 text-white shadow-green-500/40 cursor-default' 
+                      : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/40 hover:-translate-y-1'
+                  }`}
+                >
+                  {isSaved ? (
+                    <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="flex items-center gap-3">
+                      <CheckCircle2 className="w-7 h-7" /> 기록 저장됨 (Saved)
+                    </motion.div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Save className="w-7 h-7" /> 기록 저장 (Commit)
+                    </div>
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <AnimatePresence>
+              {Object.keys(errors).length > 0 && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }} 
+                  animate={{ height: 'auto', opacity: 1 }} 
+                  exit={{ height: 0, opacity: 0 }} 
+                  className="bg-red-50 px-10 py-6 border-t border-red-100 flex items-center gap-5 text-red-600 text-xs font-black uppercase tracking-widest"
+                >
+                  <AlertCircle className="w-6 h-6 shrink-0" /> 
+                  <span>Validation Error: Please check required fields ({Object.values(errors).join(', ')})</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
